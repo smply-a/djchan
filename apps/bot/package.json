@@ -1,0 +1,19 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "main.js",
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "dev": "tsx --watch src/main.ts"
+  },
+  "devDependencies": {
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "discord.js": "14.x",
+    "dotenv": "^17.3.1"
+  }
+}
