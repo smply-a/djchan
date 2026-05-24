@@ -39,4 +39,9 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
             origin: this.data.name
         })
     }
+
+    protected async deferReply(interaction: ChatInputCommandInteraction) {
+        return await interaction.reply("loading...")
+        //TODO better loading screen
+    }
 }

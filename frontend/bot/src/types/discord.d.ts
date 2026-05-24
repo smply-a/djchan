@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import { Command, Event } from "../base/index.js";
+import { Command, Event } from "../base/index.ts";
 
 declare module "discord.js" {
     interface Client {

@@ -1,6 +1,5 @@
+import { envPath } from '@app/shared'
 import { GatewayIntentBits } from "discord.js"
-import dotenv from "dotenv"
-import path from "path"
 import MyClient from "./client.js"
 import { Ping } from "./commands/ping.js"
 import { InteractionCreate, Ready } from "./events/discordjs/index.js"
@@ -13,10 +12,8 @@ const intents = [
 ]
 
 async function main() {
-    const env = dotenv.config({path: path.resolve(process.cwd()) + "/../../.env" }).parsed
-    if (!env) {
-        throw new Error("no env file")
-    }
+    const env = envPath("../../.env")
+
     if (!env.DISCORD_BOT_TOKEN) {
         throw new Error("bot token not set in env")
     }

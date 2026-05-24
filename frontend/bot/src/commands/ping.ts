@@ -11,10 +11,10 @@ export class Ping extends Command<ApplicationCommandType.ChatInput> {
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        interaction.reply("loading...")
+        this.deferReply(interaction)
 
-        const firstSend = await interaction.fetchReply()
-        const ping = firstSend.createdTimestamp - interaction.createdTimestamp
+        const firstReply = await interaction.fetchReply()
+        const ping = firstReply.createdTimestamp - interaction.createdTimestamp
 
         interaction.editReply(`ping: ${ping}`)
     }
