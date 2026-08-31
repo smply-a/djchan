@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "tsx --watch src/main.ts"
   },
+  
   "dependencies": {
     "@app/shared": "workspace:*",
     "discord.js": "14.x"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }

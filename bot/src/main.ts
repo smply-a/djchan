@@ -1,4 +1,4 @@
-import { envPath } from '@app/shared'
+import { loadEnv } from '@app/shared'
 import { GatewayIntentBits } from "discord.js"
 import MyClient from "./client.js"
 import { Ping } from "./commands/ping.js"
@@ -12,8 +12,7 @@ const intents = [
 ]
 
 async function main() {
-    const env = envPath("../../.env")
-
+    const env = loadEnv()
     if (!env.DISCORD_BOT_TOKEN) {
         throw new Error("bot token not set in env")
     }
@@ -21,9 +20,12 @@ async function main() {
     const client = new MyClient({
         intents,
     })
+
     await client.start({
         token: env.DISCORD_BOT_TOKEN,
-        commands: [Ping],
+        commands: [
+            Ping
+        ],
         events: [
             Ready,
             InteractionCreate
