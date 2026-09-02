@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "tsx --watch src/main.ts"
   },
-  
   "dependencies": {
     "@app/shared": "workspace:*",
+    "@app/player": "workspace:*",
+    "@discordjs/voice": "^0.19.2",
     "discord.js": "14.x"
   },
   "devDependencies": {

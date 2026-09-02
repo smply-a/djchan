@@ -2,6 +2,7 @@ import { loadEnv } from '@app/shared'
 import { GatewayIntentBits } from "discord.js"
 import MyClient from "./client.js"
 import { Ping } from "./commands/ping.js"
+import { Play } from './commands/play.js'
 import { InteractionCreate, Ready } from "./events/discordjs/index.js"
 
 const intents = [
@@ -9,6 +10,7 @@ const intents = [
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
 ]
 
 async function main() {
@@ -24,7 +26,8 @@ async function main() {
     await client.start({
         token: env.DISCORD_BOT_TOKEN,
         commands: [
-            Ping
+            Ping,
+            Play
         ],
         events: [
             Ready,

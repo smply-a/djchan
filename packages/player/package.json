@@ -1,0 +1,14 @@
+{
+  "name": "@app/player",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "test": "tsx --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -12,27 +12,32 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             if (!interaction.guild) return
 
             if (interaction.isChatInputCommand()) {
-                await this.handleSlashCommand(interaction)
+                this.handleSlashCommand(interaction)
             }
         } catch (error) {
-            this.logger.log(error)
-            await this.handleError(interaction)
+            await this.handleError(error, interaction)
         }
 
     }
 
+    // todo add error to logger
     private async handleSlashCommand(interaction: ChatInputCommandInteraction) {
         const name = interaction.commandName
         const command = interaction.client.commands.get(name)
         if (!command) {
             throw new Error(`command: [${name}] not found`)
         }
-
-        return command.execute(interaction)
+        
+        try {
+            await command.execute(interaction)
+        } catch (error) {
+            command.logger.log(error)
+        }
+        
     }
 
     // TODO
-    private async handleError(interaction: Interaction) {
-
+    private async handleError(error: unknown, interaction: Interaction) {
+        this.logger.log(error)
     }
 }

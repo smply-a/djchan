@@ -33,7 +33,7 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
 
     // lazy init
     #logger?: Logger
-    protected get logger(): Logger {
+    public get logger(): Logger {
         return this.#logger ??= new Logger({
             type: "command",
             origin: this.data.name
