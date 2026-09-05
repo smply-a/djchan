@@ -1,4 +1,4 @@
-import type { ApplicationCommandType, Awaitable, ChatInputApplicationCommandData, ChatInputCommandInteraction, MessageApplicationCommandData, MessageContextMenuCommandInteraction, PrimaryEntryPointCommandData, PrimaryEntryPointCommandInteraction, UserApplicationCommandData, UserContextMenuCommandInteraction } from "discord.js";
+import { type ApplicationCommandType, type Awaitable, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
 import { Logger } from "./Logger.js";
 
 type CommandTypeMap = {
@@ -22,14 +22,23 @@ type CommandTypeMap = {
 }
 
 export abstract class Command<T extends keyof CommandTypeMap = keyof CommandTypeMap> {
-    constructor(public readonly data: CommandTypeMap[T]["data"] & {type: T}) {}
-    public abstract execute(interaction: CommandTypeMap[T]["interaction"]): Awaitable<void>
-    
+    constructor(
+        public readonly data: CommandTypeMap[T]["data"] & {type: T}
+    ) {}
     // to make command clickable in help
     public id?: string
 
     // for visualisation and help
     //public icon:
+
+
+    // implementation of command
+    protected abstract execute(interaction: CommandTypeMap[T]["interaction"]): Awaitable<void>
+
+    // filter 
+    public async run(interaction: CommandTypeMap[T]["interaction"]) {
+        await this.execute(interaction)
+    }
 
     // lazy init
     #logger?: Logger
@@ -40,6 +49,7 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
         })
     }
 
+    // utils
     protected async deferReply(interaction: ChatInputCommandInteraction) {
         return await interaction.reply("loading...")
         //TODO better loading screen

@@ -2,6 +2,7 @@ import { Client, Collection, type ClientOptions } from "discord.js";
 import type { Command } from "./base/Command.js";
 import type { Event } from "./base/Event.js";
 import { Logger } from "./base/Logger.js";
+import { PlayerManager } from "./players.js";
 
 export default class BotClient extends Client {
     public commands: Collection<string, Command>
@@ -13,6 +14,7 @@ export default class BotClient extends Client {
         // needed because of module augmentation in dicord.d.ts
         this.commands = new Collection()
         this.events = new Collection()
+        this.players = new PlayerManager(this)
         // TODO button class wie gemni empfohlen
     }
 

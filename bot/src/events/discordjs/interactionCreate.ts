@@ -12,7 +12,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             if (!interaction.guild) return
 
             if (interaction.isChatInputCommand()) {
-                this.handleSlashCommand(interaction)
+                await this.handleSlashCommand(interaction)
             }
         } catch (error) {
             await this.handleError(error, interaction)
@@ -29,9 +29,13 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         }
         
         try {
-            await command.execute(interaction)
+            await command.run(interaction)
         } catch (error) {
             command.logger.log(error)
+
+            switch (error) {
+            
+            }
         }
         
     }

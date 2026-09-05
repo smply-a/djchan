@@ -1,26 +1,46 @@
-import { PlaybackStatus, ytdlp, type Track } from "@app/player";
+import { ytdlp, type Track } from "@app/player";
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus, type AudioPlayer } from "@discordjs/voice";
 import { type ChildProcess } from "child_process";
-import type { Guild, VoiceBasedChannel } from "discord.js";
+import type { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { Logger } from "./Logger.js";
 
-export enum GuildPlayerCodes {
-    success,
-    alreadyConnected,
-    queueEmpty,
-    notConnected
+interface PlayerState {
+    queue: Track[]
+    track: Track | null,
+    status: AudioPlayerStatus
 }
 
-export class GuildPlayerInstance extends EventEmitter {
+export enum PublicPlayerErrors {
+    Internal,
+    QueueEmpty,
+    NotConnected,
+    AlreadyPaused,
+    AlreadyPlaying,
+    NothingToPause,
+    NothingToResume
+}
+
+interface GuildPlayerEvents {
+    queueEnd: []
+    enqueued: [track: Track]
+    buffering: [track: Track]
+    startedPlaying: [track: Track]
+    disconnected: []
+    paused: []
+    resumed: []
+    stopped: []
+    error: [error: PublicPlayerErrors]
+}
+
+export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     private track: Track | null = null
     private queue: Track[] = []
-    private status = PlaybackStatus.Idle
 
     public readonly guildId: string
-    private connection: VoiceConnection | null = null
-
     private audioPlayer: AudioPlayer
+
+    private connection: VoiceConnection | null = null
     private ytdlp: ChildProcess | null = null
 
     #logger?: Logger
@@ -32,22 +52,48 @@ export class GuildPlayerInstance extends EventEmitter {
     }
     
     // TODO load from remoteplayer
-    constructor(guild: Guild) {
+    constructor(guildId: string) {
         super()
-        this.guildId = guild.id
+        this.guildId = guildId
         this.audioPlayer = createAudioPlayer()
 
         this.audioPlayer.on("error", (error) => {
             this.logger.error(error)
+            this.emit("error", PublicPlayerErrors.Internal)
         })
 
         this.audioPlayer.on(AudioPlayerStatus.Idle, () => {
             this.track = null
             this.playNextTrack()
         })
+
+        this.audioPlayer.on(AudioPlayerStatus.Paused, () => {
+            this.emit("paused")
+        })
+
+        this.audioPlayer.on(AudioPlayerStatus.Buffering, () => {
+            if (!this.track) {
+                throw new Error("Buffering without track")
+            }
+
+            this.emit("buffering", this.track)
+        })
+
+        this.audioPlayer.on(AudioPlayerStatus.Playing, (oldState) => {
+            if (oldState.status === AudioPlayerStatus.Paused) {
+                this.emit("resumed")
+                return
+            }
+
+            if(!this.track) {
+                throw new Error("Playing without track")
+            }
+
+            this.emit("startedPlaying", this.track)
+        })
     }
 
-    public get state() {
+    public get state(): PlayerState {
         return {
             track: this.track,
             queue: this.queue,
@@ -55,34 +101,100 @@ export class GuildPlayerInstance extends EventEmitter {
         }
     }
 
-    public async join(vc: VoiceBasedChannel) {
+    private get status() {
+        return this.audioPlayer.state.status
+    } 
+
+    public async tryJoin(vc: VoiceBasedChannel) {
+        // alread connected
         if (this.connection && this.connection.state.status !== VoiceConnectionStatus.Destroyed) {
-            return GuildPlayerCodes.alreadyConnected  
+            return  
         }
 
+        // else
         this.connection = joinVoiceChannel({
             channelId: vc.id,
             guildId: this.guildId,
             adapterCreator: vc.guild.voiceAdapterCreator,
         });
 
-        await entersState(this.connection, VoiceConnectionStatus.Ready, 30_000)
-        this.connection.subscribe(this.audioPlayer)
-        return GuildPlayerCodes.success
-    }
-
-    // TODO maybe rework when website dazu kommt
-    public addTrack(track: Track) {
-        if (!this.connection) {
-            return GuildPlayerCodes.notConnected
-        }
-        this.queue.push(track)
-        if ( this.status === PlaybackStatus.Idle) {
-            this.playNextTrack()
-        } else {
-            this.updateState(this.status)
+        try {
+            await entersState(this.connection, VoiceConnectionStatus.Ready, 30_000)
+            this.connection.subscribe(this.audioPlayer)
+        } catch (error) {
+            this.disconnect()
+            this.logger.error(`Failed to join vc: ${error}`)
+            this.emit("error", PublicPlayerErrors.Internal)
         }
         
+    }
+
+    public disconnect() {
+        this.stop()
+        if (this.connection) {
+            this.connection.destroy()
+            this.connection = null
+        }
+        this.emit("disconnected")
+    }
+
+    public addTrack(track: Track) {
+        if (!this.connection) {
+            this.emit("error", PublicPlayerErrors.NotConnected)
+            return
+        }
+
+        this.queue.push(track)
+
+        if (this.status !== AudioPlayerStatus.Idle) {
+            this.emit("enqueued", track)
+        } else {
+            this.playNextTrack()
+        }
+    }
+
+    public pause() {
+        if (!this.connection) {
+            this.emit("error", PublicPlayerErrors.NotConnected)
+            return
+        }
+
+        switch (this.status) {
+
+            case AudioPlayerStatus.Paused: {
+                this.emit("error", PublicPlayerErrors.AlreadyPaused)
+                return
+            }
+
+            case AudioPlayerStatus.Idle: {
+                this.emit("error", PublicPlayerErrors.NothingToPause)
+                return
+            }
+        }
+
+        this.audioPlayer.pause()
+    }
+
+    public resume() {
+        if (!this.connection) {
+            this.emit("error", PublicPlayerErrors.NotConnected)
+            return
+        }
+
+        switch (this.status) {
+
+            case AudioPlayerStatus.Playing: {
+                this.emit("error", PublicPlayerErrors.AlreadyPlaying)
+                return
+            }
+
+            case AudioPlayerStatus.Idle: {
+                this.emit("error", PublicPlayerErrors.NothingToResume)
+                return
+            }
+        } 
+
+        this.audioPlayer.unpause()
     }
 
     public stop() {
@@ -90,7 +202,6 @@ export class GuildPlayerInstance extends EventEmitter {
         this.audioPlayer.stop(true);
         this.queue = [];
         this.track = null;
-        this.updateState(PlaybackStatus.Idle);
     }
 
     private playNextTrack() {
@@ -98,19 +209,23 @@ export class GuildPlayerInstance extends EventEmitter {
         const next = this.queue.shift()
 
         if (!next) {
-            this.updateState(PlaybackStatus.Idle)
-            return GuildPlayerCodes.queueEmpty
+            this.emit("queueEnd")
+            return 
         } 
 
         this.track = next
-        this.updateState(PlaybackStatus.Buffering)
 
         try {
             this.ytdlp = ytdlp.getWebmOpusStream(next.url)
 
-            this.ytdlp.stderr?.on("data", (data) => this.logger.error("yt-dlp:", data.toString()));
-            this.ytdlp.on("error", (err) => this.logger.error("yt-dlp error:", err));
-            this.ytdlp.on("close", () => this.logger.log("closed yt-dlp process"))
+            this.ytdlp.stderr?.on("data", (data) => this.logger.log("yt-dlp:", data.toString()));
+            this.ytdlp.on("error", (err) => {
+                this.logger.error("yt-dlp error:", err);
+                this.emit("error", PublicPlayerErrors.Internal)
+                this.playNextTrack();
+            });
+
+            this.ytdlp.on("close", () => this.logger.log("closed yt-dlp stream process"))
 
             if (!this.ytdlp.stdout) {throw new Error("No ytdlp.stdout, unkown cause")}
 
@@ -119,17 +234,11 @@ export class GuildPlayerInstance extends EventEmitter {
             });
             
             this.audioPlayer.play(resource)
-            this.updateState(PlaybackStatus.Playing)
 
         } catch (error) {
             this.logger.error(error)
-            this.playNextTrack()
+            this.emit("error", PublicPlayerErrors.Internal)
         }
-    }
-
-    private updateState(newStatus: PlaybackStatus) {
-        this.status = newStatus
-        this.emit("status", this.state)
     }
 
     private killYtdlp() {
