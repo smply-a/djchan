@@ -26,7 +26,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         this.deferReply(interaction)
 
-        const player = interaction.client.players.getOrCreate(interaction.guild.id);
+        const player = interaction.client.players.getOrCreate(interaction.guild.id, interaction.channelId);
         await player.tryJoin(voiceChannel)
 
         const url = interaction.options.getString("url");

@@ -2,7 +2,7 @@ import { Client, Collection, type ClientOptions } from "discord.js";
 import type { Command } from "./base/Command.js";
 import type { Event } from "./base/Event.js";
 import { Logger } from "./base/Logger.js";
-import { PlayerManager } from "./players.js";
+import { PlayerManager } from "./base/PlayerManager.js";
 
 export default class BotClient extends Client {
     public commands: Collection<string, Command>

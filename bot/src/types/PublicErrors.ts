@@ -42,8 +42,8 @@ export class AlreadyConnected extends PublicError {
     }     
 }
 
-export class TimeOut extends PublicError {
-    public message = "Bot timed out trying to connect to your channel."
+export class VcJoinTimeOut extends PublicError {
+    public message = "Bot timed out trying to connect to your vc."
     constructor() {
         super("player")
     }     
@@ -83,6 +83,6 @@ export class NotPlaying extends PublicError {
 export class OnlyInGuild extends PublicError {
     public message = "This is only allowed in Guilds."
     constructor() {
-        super("player")
+        super("general")
     }     
 }

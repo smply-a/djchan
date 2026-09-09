@@ -1,6 +1,6 @@
 import { Collection } from "discord.js";
 import { Command, Event } from "../base/index.js";
-import type { PlayerManager } from "../players.ts";
+import type { PlayerManager } from "../base/PlayerManager.ts";
 
 declare module "discord.js" {
     interface Client {
