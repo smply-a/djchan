@@ -31,7 +31,7 @@ function isUrl(url: string) {
 export const ytdlp = {
     getWebmOpusStream: (url: string): ChildProcess => {
         if (isUrl(url) && validUrl(url)) {
-            console.log("starting stream...")
+            console.log(`starting stream... ${url}`)
             
             return spawn("docker", [
                 "run",
@@ -54,6 +54,9 @@ export const ytdlp = {
         return new Promise((resolve, reject) => {
 
             const isurl = isUrl(urlOrName)
+            if(isurl && !validUrl(urlOrName)) {
+                throw new Error("link is not from youtube")
+            }
             const query = isurl ? urlOrName : `ytsearch1:${urlOrName}`;
 
             console.log("searching...")
@@ -83,7 +86,7 @@ export const ytdlp = {
                     const data = isurl ? JSON.parse(stdout) : JSON.parse(stdout).entries[0]
 
                     const {title, channel, duration} = data;
-                    const url = data.webpage_url ?? data.original_url ?? data.url ?? urlOrName;
+                    const url = data.url ?? data.original_url;
 
                     const track = {
                         url,

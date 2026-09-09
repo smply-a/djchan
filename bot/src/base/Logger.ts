@@ -12,6 +12,6 @@ export class Logger {
     }
 
     error(...args: unknown[]) {
-        console.log(`[${this.options.type} : ${this.options.origin}] > ${args.join("\n> ")}`)
+        console.log(`[Error] [${this.options.type} : ${this.options.origin}] > `, ...args)
     }
 }

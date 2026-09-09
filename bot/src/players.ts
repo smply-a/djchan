@@ -1,8 +1,17 @@
 import type { Client } from "discord.js"
 import { GuildPlayerInstance } from "./base/GuildPlayerInstance.js"
+import { Logger } from "./base/Logger.js"
 
 export class PlayerManager {
     private players = new Map<string, GuildPlayerInstance>()
+
+    #logger?: Logger
+    public get logger(): Logger {
+        return this.#logger ??= new Logger({
+            type: "internal",
+            origin: "player manager"
+        })
+    }
 
     constructor(private client: Client) {
         this.client.on("voiceStateUpdate", (oldState, newState) => {
@@ -51,5 +60,6 @@ export class PlayerManager {
             player.disconnect();
             this.players.delete(guildId);
         }
+        this.logger.log(`Removed player for guild: [${guildId}]`)
     }
 }

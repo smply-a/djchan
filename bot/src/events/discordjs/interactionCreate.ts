@@ -31,17 +31,15 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         try {
             await command.run(interaction)
         } catch (error) {
-            command.logger.log(error)
+            command.logger.error(error)
 
-            switch (error) {
             
-            }
         }
         
     }
 
     // TODO
     private async handleError(error: unknown, interaction: Interaction) {
-        this.logger.log(error)
+        this.logger.error(error)
     }
 }
