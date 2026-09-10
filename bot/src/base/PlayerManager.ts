@@ -53,18 +53,32 @@ export class PlayerManager {
 
     public getOrCreate(guildId: string, textChannelId: string) {
         let player = this.players.get(guildId)
-        const replyChannel = this.replyChannels.get(guildId)
 
         if (!player) {
             player = this.createPlayer(guildId)
         }
 
-        // update reply channel to last used channel
+        this.setReplyChannel(guildId, textChannelId)
+        return player
+    }
+
+
+    public get(guildId: string, textChannelId: string) {
+        const player = this.players.get(guildId)
+
+        if (!player) {
+            return null
+        }
+
+        this.setReplyChannel(guildId, textChannelId)
+        return player
+    }
+
+    private setReplyChannel(guildId: string, textChannelId: string) {
+        const replyChannel = this.replyChannels.get(guildId)
         if (!replyChannel || replyChannel !== textChannelId) {
             this.replyChannels.set(guildId, textChannelId)
         }
-
-        return player
     }
 
     private remove(guildId: string): void {
@@ -73,6 +87,7 @@ export class PlayerManager {
             player.tryDisconnect();
             this.players.delete(guildId);
             this.replyChannels.delete(guildId)
+            player.removeAllListeners()
         }
         this.logger.log(`Removed player for guild: [${guildId}]`)
     }
@@ -82,19 +97,24 @@ export class PlayerManager {
             this.players.set(guildId, player)
             this.logger.log(`Added player for guild: [${guildId}]`)
 
-            // setup listener for new player
-
             // todo button on error with skip this song?
+            // setup listener for new player
             player.on("error", () => {
                 const channel = this.replyChannels.get(guildId)
             })
 
             player.on("playingNewTrack", (cause) => {
                 const channel = this.replyChannels.get(guildId)
+                if (cause === "command") return
+
+                // only handle noninteraction events
             })
 
             player.on("queueEnd", (cause) => {
                 const channel = this.replyChannels.get(guildId)
+                if (cause === "command") return
+
+                // only handle noninteraction events
             })
 
             return player

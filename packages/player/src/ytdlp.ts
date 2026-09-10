@@ -85,14 +85,18 @@ export const ytdlp = {
                 try {
                     const data = isurl ? JSON.parse(stdout) : JSON.parse(stdout).entries[0]
 
-                    const {title, channel, duration} = data;
+                    // console.log(data)
+
+                    const {title, channel, duration, thumbnail, duration_string, uploader_url} = data;
                     const url = data.url ?? data.original_url;
 
-                    const track = {
+                    const track: Track = {
                         url,
                         title,
                         interpret: channel,
                         duration,
+                        thumbnail,
+                        uploader_url
                     }
                     resolve(track);
 

@@ -7,4 +7,6 @@ export interface Track {
         interpret: string,
         url: string,
         duration: number,
+        thumbnail: string,
+        uploader_url: string,
     }

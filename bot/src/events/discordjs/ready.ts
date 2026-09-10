@@ -9,5 +9,14 @@ export class Ready extends Event<"clientReady"> {
     public run(client: Client<true>): void {
         const {username, id} = client.user
         this.logger.log(`logged in as [${username}]`)
+
+        // set presence
+        client.user.setPresence({
+            status: "online",
+            activities: [{
+                name: "streaming yt music", 
+                type: 4
+            }]
+        })
     }
 }

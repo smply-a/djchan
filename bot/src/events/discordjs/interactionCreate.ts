@@ -1,5 +1,6 @@
-import { ChatInputCommandInteraction, type Interaction } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags, TextDisplayBuilder, type Interaction } from "discord.js";
 import { Event } from "../../base/Event.js";
+import { InternalError, PublicError } from "../../types/PublicErrors.js";
 
 // Handles all interactions
 export class InteractionCreate extends Event<"interactionCreate"> {
@@ -8,19 +9,28 @@ export class InteractionCreate extends Event<"interactionCreate"> {
     }
 
     public async run(interaction: Interaction): Promise<void> {
-        try {
-            if (!interaction.guild) return
+        // dont allow commands in dms
+        if (!interaction.guild) {
+            // TODO
+            if (interaction.isRepliable()) {
+                await interaction.reply({
+                    components: [new TextDisplayBuilder().setContent("Sorry, I am only working in guilds :/")],
+                    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
+                })
+            }
+            return
+        }
 
+        try {
             if (interaction.isChatInputCommand()) {
                 await this.handleSlashCommand(interaction)
             }
         } catch (error) {
-            await this.handleError(error, interaction)
+            this.logger.error(error)
+            await this.handleUnhandeledError(error, interaction)
         }
-
     }
 
-    // todo add error to logger
     private async handleSlashCommand(interaction: ChatInputCommandInteraction) {
         const name = interaction.commandName
         const command = interaction.client.commands.get(name)
@@ -30,16 +40,37 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         
         try {
             await command.run(interaction)
+
         } catch (error) {
             command.logger.error(error)
-
-            
+            await this.handleSlashCommandError(error, interaction)
         }
-        
     }
 
     // TODO
-    private async handleError(error: unknown, interaction: Interaction) {
-        this.logger.error(error)
+    private async handleUnhandeledError(error: unknown, interaction: Interaction) {
+
+    }
+
+    private async handleSlashCommandError(error: unknown, interaction: ChatInputCommandInteraction) {
+        // default error message
+        let payload = new InternalError().getReply()
+
+        if (error instanceof PublicError) {
+            payload = error.getReply()
+        }
+
+        // send error message
+        if (interaction.replied || interaction.deferred) {
+            await interaction.editReply(payload)
+        }
+        else {
+            await interaction.reply(payload)
+        }
+
+        // delete message after 5 minutes
+        setTimeout(() => {
+            void interaction.deleteReply().catch(()=>{})
+        }, 5*60_000)
     }
 }

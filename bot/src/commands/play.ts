@@ -1,17 +1,19 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import { MemberNotConnected, OnlyInGuild } from "../types/PublicErrors.js";
+import NowPlaying from "../components/replies/NowPlaying.js";
+import Resumed from "../components/replies/Resumed.js";
+import SongSearch from "../components/replies/SongSearch.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
         super({
             name: "play",
-            description: "plays audio from given yt url",
+            description: "play song | resume",
             type: ApplicationCommandType.ChatInput,
             options: [{
-                name: "url",
-                description: "plays audio from yt url",
+                name: "query",
+                description: "youtube url | search query",
                 type: ApplicationCommandOptionType.String,
                 required: false
             }]
@@ -19,34 +21,35 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
     }
 
     public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!interaction.inCachedGuild()) throw new OnlyInGuild()
 
-        const voiceChannel = interaction.member.voice.channel;
-        if (!voiceChannel) throw new MemberNotConnected()
-
-        this.deferReply(interaction)
-
-        const player = interaction.client.players.getOrCreate(interaction.guild.id, interaction.channelId);
-        await player.tryJoin(voiceChannel)
-
-        const url = interaction.options.getString("url");
+        const query = interaction.options.getString("query");
 
         // resume
-        if (!url) {
+        if (!query) {
+            const player = this.getPlayerAccess(interaction)
             player.resume()
-            interaction.editReply("resumed!")
+            await interaction.reply(Resumed())
             return
         }
+
+        const {player, userVc} = this.getOrCreatePlayerAccess(interaction)
+
+        await interaction.reply(SongSearch({type: "searching", query}))
 
         // search and play
-        const track = await ytdlp.getTrack(url)
+        const track = await ytdlp.getTrack(query)
+        
+        // await interaction.editReply(SongSearch({type: "found", track}))
+
+        await player.tryJoin(userVc)
         const inQueue = player.addTrack(track)
 
+        // follow up with public message (not ephemeral)
         if (inQueue) {
-            interaction.editReply(`enqueued: ${track.title}`)
+            await interaction.followUp(SongSearch({type: "queued", track}))
             return
         }
 
-        interaction.editReply(`now playing: ${track.title}`)
+        await interaction.followUp(NowPlaying({type: "nowPlaying", track}))
     }
 }

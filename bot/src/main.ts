@@ -1,6 +1,7 @@
 import { loadEnv } from '@app/shared'
 import { GatewayIntentBits } from "discord.js"
 import MyClient from "./client.js"
+import { Pause } from './commands/pause.js'
 import { Ping } from "./commands/ping.js"
 import { Play } from './commands/play.js'
 import { InteractionCreate, Ready } from "./events/discordjs/index.js"
@@ -27,7 +28,8 @@ async function main() {
         token: env.DISCORD_BOT_TOKEN,
         commands: [
             Ping,
-            Play
+            Play,
+            Pause
         ],
         events: [
             Ready,

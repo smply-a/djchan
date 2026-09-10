@@ -36,6 +36,15 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     private connection: VoiceConnection | null = null
     private channelId: string | null = null
 
+    public getChannelId() {
+        return this.channelId
+    }
+
+    public updateChannelId(newChannelId: string) {
+        this.channelId = newChannelId
+        this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
+    }
+
     #logger?: Logger
     private get logger(): Logger {
         return this.#logger ??= new Logger({
@@ -158,7 +167,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                 throw new AlreadyPaused()
             }
 
-            case AudioPlayerStatus.Idle: {
+            case AudioPlayerStatus.Idle:
+            case AudioPlayerStatus.Buffering: {
                 throw new NotPlaying()
             }
         }
@@ -172,7 +182,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
 
         switch (this.status) {
-
+            case AudioPlayerStatus.Buffering:
             case AudioPlayerStatus.Playing: {
                 throw new AlreadyPlaying()
             }
@@ -189,11 +199,6 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.queue = [];
         this.audioPlayer.stop(true);
         this.tryKillStream()
-    }
-
-    public updateChannelId(newChannelId: string) {
-        this.channelId = newChannelId
-        this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
     }
 
     private playNextTrack(cause: PlayerEventCause) {
