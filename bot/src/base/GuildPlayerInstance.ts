@@ -3,7 +3,7 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
 import { type ChildProcess } from "child_process";
 import type { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
-import { AlreadyConnected, AlreadyPaused, AlreadyPlaying, CLientNotConnected, NotPlaying, VcJoinTimeOut } from "../types/PublicErrors.js";
+import { AlreadyPaused, AlreadyPlaying, CLientNotConnected, NotPlaying, VcJoinTimeOut } from "../types/PublicErrors.js";
 import { Logger } from "./Logger.js";
 
 interface PlayerState {
@@ -33,15 +33,22 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     public readonly guildId: string
     private audioPlayer: AudioPlayer
 
-    private connection: VoiceConnection | null = null
-    private channelId: string | null = null
-
-    public getChannelId() {
-        return this.channelId
+    private voice: {
+        connection: VoiceConnection,
+        channelId: string
     }
 
-    public updateChannelId(newChannelId: string) {
-        this.channelId = newChannelId
+    // mutex on join
+    private joining: Promise<unknown> | null = null
+
+    public getChannelId(): string | null {
+        if (!this.voice) return null
+        return this.voice.channelId
+    }
+
+    public setNewChannelId(newChannelId: string) {
+        if (!this.voice) throw new Error ("cant update channel if not connected")
+        this.voice.channelId = newChannelId
         this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
     }
 
@@ -95,54 +102,63 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
     }
 
-    private get status() {
-        return this.audioPlayer.state.status
-    } 
+    public async waitJoin() {
+        if (this.joining) {
+            await this.joining
+        }
+    }
 
     public async tryJoin(vc: VoiceBasedChannel) {
-        // already connected to same channel: ignore
-        if (this.connection && this.connection.state.status !== VoiceConnectionStatus.Destroyed) {
-            if(vc.id === this.channelId) {
+        try {
+            // waits for "mutex"
+            if (this.joining) {
+                await this.joining
+            }
+
+            // check if bot already connected
+            if (this.voice && this.voice.connection.state.status !== VoiceConnectionStatus.Destroyed) {
                 return
             }
 
-            const channelName = this.channelId ? vc.guild.channels.cache.get(this.channelId)?.name : "unknown"
-            throw new AlreadyConnected({
-                channelName
-            })
-        }
+            // bot not already connected
+            this.voice = {
+                connection: joinVoiceChannel({
+                    channelId: vc.id,
+                    guildId: this.guildId,
+                    adapterCreator: vc.guild.voiceAdapterCreator,
+                }),
+                channelId: vc.id
+            }
 
-        // else
-        this.channelId = vc.id
-        this.connection = joinVoiceChannel({
-            channelId: this.channelId,
-            guildId: this.guildId,
-            adapterCreator: vc.guild.voiceAdapterCreator,
-        });
+            // set mutex 
+            // ? i believe this is a mutex because js only switches context after an await
+            this.joining = entersState(this.voice.connection, VoiceConnectionStatus.Ready, 30_000)
+            await this.joining
+            this.voice.connection.subscribe(this.audioPlayer)
 
-        try {
-            await entersState(this.connection, VoiceConnectionStatus.Ready, 30_000)
-            this.connection.subscribe(this.audioPlayer)
         } catch (error) {
             this.tryDisconnect()
             throw new VcJoinTimeOut()
+
+        } finally {
+            // reset mutex
+            this.joining = null
         }
         
     }
 
     public tryDisconnect() {
         this.stop()
-        if (this.connection) {
-            this.connection.destroy()
-            this.connection = null
-            this.channelId = null
+        if (this.voice) {
+            this.voice.connection.destroy()
+            this.voice = null
             this.emit("disconnected")
         }
     }
 
     // ! cause is "command"
     public addTrack(track: Track) {
-        if (!this.connection) {
+        if (!this.voice) {
             throw new CLientNotConnected()
         }
 
@@ -156,8 +172,14 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
     }
 
+    public skip() {
+        this.playNextTrack("command")
+        if (!this.track) return null
+        return this.track.data
+    }
+
     public pause() {
-        if (!this.connection) {
+        if (!this.voice) {
             throw new CLientNotConnected()
         }
 
@@ -167,17 +189,19 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                 throw new AlreadyPaused()
             }
 
-            case AudioPlayerStatus.Idle:
-            case AudioPlayerStatus.Buffering: {
+            case AudioPlayerStatus.Playing: {
+                this.audioPlayer.pause()
+                break
+            }
+
+            default: {
                 throw new NotPlaying()
             }
         }
-
-        this.audioPlayer.pause()
     }
 
     public resume() {
-        if (!this.connection) {
+        if (!this.voice) {
             throw new CLientNotConnected()
         }
 
@@ -187,12 +211,15 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                 throw new AlreadyPlaying()
             }
 
-            case AudioPlayerStatus.Idle: {
+            case AudioPlayerStatus.Paused: {
+                this.audioPlayer.unpause()
+                break
+            }
+
+            default: {
                 throw new NotPlaying()
             }
         } 
-
-        this.audioPlayer.unpause()
     }
 
     public stop() {
@@ -200,6 +227,12 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.audioPlayer.stop(true);
         this.tryKillStream()
     }
+
+
+
+    private get status() {
+        return this.audioPlayer.state.status
+    } 
 
     private playNextTrack(cause: PlayerEventCause) {
         this.tryKillStream()

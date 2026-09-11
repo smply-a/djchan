@@ -26,13 +26,13 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         // resume
         if (!query) {
-            const player = this.getPlayerAccess(interaction)
+            const player = await this.getPlayerAccess(interaction)
             player.resume()
             await interaction.reply(Resumed())
             return
         }
 
-        const {player, userVc} = this.getOrCreatePlayerAccess(interaction)
+        const {player, userVc} = await this.getOrCreatePlayerAccess(interaction)
 
         await interaction.reply(SongSearch({type: "searching", query}))
 
@@ -44,12 +44,11 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         await player.tryJoin(userVc)
         const inQueue = player.addTrack(track)
 
-        // follow up with public message (not ephemeral)
         if (inQueue) {
-            await interaction.followUp(SongSearch({type: "queued", track}))
+            await interaction.editReply(SongSearch({type: "queued", track}))
             return
         }
 
-        await interaction.followUp(NowPlaying({type: "nowPlaying", track}))
+        await interaction.editReply(NowPlaying({type: "nowPlaying", track}))
     }
 }

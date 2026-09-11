@@ -77,9 +77,10 @@ export class MemberNotConnected extends InvalidCommandError {
 }
 
 export class MemberNotInSameChannel extends InvalidCommandError {
-    public message = "You must be connected to the same channel as the bot to use this command."
+    public message: string
     constructor() {
         super([])
+        this.message = `You must be connected to the same channel as the bot.`
     }     
 }
 

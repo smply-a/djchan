@@ -1,8 +1,8 @@
 import type { Track } from "@app/player";
-import { getDurationString } from "@app/shared";
-import { ContainerBuilder, MessageFlags, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder } from "discord.js";
+import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
 import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
+import { songInfo } from "../TextComponents/songInfo.js";
 
 export default function NowPlaying(args: 
     {type: "nowPlaying", track: Track} | 
@@ -12,37 +12,25 @@ export default function NowPlaying(args:
         .setAccentColor(Color.player);
 
     const {type, track} = args
-    const songInfo =
-            `## [${track.title}](${track.url})\n` +
-            `**${track.interpret}**\n` +
-            `\`${getDurationString(track.duration)}\``
-    
-    let textDisplay: TextDisplayBuilder
     
     switch (type) {
         case "nowPlaying": {
-            textDisplay = new TextDisplayBuilder().setContent(
-                "### Now Playing\n" +
-                songInfo
-            )
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                "### now playing"
+            ))
 
             break
         }
         case "skipped": {
-            textDisplay = new TextDisplayBuilder().setContent(
-                "### Skipped to\n" +
-                songInfo
-            )
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                "### skipped to"
+            ))
 
             break
         }
     }
 
-    const section = new SectionBuilder()
-        .addTextDisplayComponents(textDisplay)
-        .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
-
-    container.addSectionComponents(section);
+    container.addSectionComponents(songInfo({track, size: "primary"}));
 
     //container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large))
 

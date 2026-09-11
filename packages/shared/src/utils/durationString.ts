@@ -3,5 +3,8 @@ export function getDurationString(duration: number) {
     const mins = Math.floor(duration / 60)
     const seconds = duration % 60
 
-    return h > 0 ? `${h}:${mins}:${seconds}` : `${mins}:${seconds}`
+    const secondsStr = (seconds < 10 ? "0" : "") + `${seconds}`
+    const minsStr = (mins < 10 && h > 0 ? "0" : "") + `${mins}`
+
+    return h > 0 ? `${h}:${minsStr}:${secondsStr}` : `${minsStr}:${secondsStr}`
 }

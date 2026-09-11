@@ -52,19 +52,20 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     }
 
     // utils
-    protected getPlayerAccess(interaction: ChatInputCommandInteraction) {
-        const {player, userVc} = this.getPlayer(interaction)
+    // ? possible fehler quelle, merken für zukunft bei bugs mit music commands
+    protected async getPlayerAccess(interaction: ChatInputCommandInteraction) {
+        const {player, userVc} = this.getPlayerAccessParams(interaction)
         if (!player) throw new CLientNotConnected()
 
-        this.ensureSameChannel(player, userVc.id)
+        await this.ensureSameChannel(player, userVc.id)
         return player
     }
 
-    protected getOrCreatePlayerAccess(interaction: ChatInputCommandInteraction) {
-        let {player, userVc, guildId} = this.getPlayer(interaction)
+    protected async getOrCreatePlayerAccess(interaction: ChatInputCommandInteraction) {
+        let {player, userVc, guildId} = this.getPlayerAccessParams(interaction)
         
         if (player) {
-            this.ensureSameChannel(player, userVc.id)
+            await this.ensureSameChannel(player, userVc.id)
         } else {
             player = interaction.client.players.getOrCreate(guildId, interaction.channelId);
         }
@@ -72,11 +73,12 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
         return { player, userVc }
     }
 
-    protected ensureSameChannel(player: GuildPlayerInstance, userChannelId: string) {
+    protected async ensureSameChannel(player: GuildPlayerInstance, userChannelId: string) {
+        if (player.getChannelId() === null) await player.waitJoin()
         if (player.getChannelId() !== userChannelId) throw new MemberNotInSameChannel()
     }
 
-    private getPlayer(interaction: ChatInputCommandInteraction) {
+    private getPlayerAccessParams(interaction: ChatInputCommandInteraction) {
         if (!interaction.inCachedGuild()) throw new OnlyInCachedGuild()
         
         const userVc = interaction.member.voice.channel;

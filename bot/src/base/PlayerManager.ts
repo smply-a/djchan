@@ -34,7 +34,7 @@ export class PlayerManager {
 
                 // update channelId when moved
                 if (oldState.channelId !== newState.channelId) {
-                    player.updateChannelId(newState.channelId)
+                    player.setNewChannelId(newState.channelId)
                 }
             }
 

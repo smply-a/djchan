@@ -13,7 +13,7 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        const player = this.getPlayerAccess(interaction)
+        const player = await this.getPlayerAccess(interaction)
 
         player.pause()
         await interaction.reply(Paused())

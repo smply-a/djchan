@@ -11,11 +11,14 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
         })
     }
 
-    // TODO make multiple pings to calc average
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        const player = this.getPlayerAccess(interaction)
+        const player = await this.getPlayerAccess(interaction)
 
         const track = player.skip()
+        if (!track) {
+            return
+        }
+
         await interaction.reply(NowPlaying({type: "skipped", track}))
     }
 }
