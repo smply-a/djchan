@@ -1,4 +1,4 @@
-import type { Client } from "discord.js"
+import type { Client, VoiceBasedChannel } from "discord.js"
 import { GuildPlayerInstance } from "./GuildPlayerInstance.js"
 import { Logger } from "./Logger.js"
 
@@ -51,11 +51,11 @@ export class PlayerManager {
         })
     }
 
-    public getOrCreate(guildId: string, textChannelId: string) {
+    public getOrCreate(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
         let player = this.players.get(guildId)
 
         if (!player) {
-            player = this.createPlayer(guildId)
+            player = this.createPlayer(guildId, vc)
         }
 
         this.setReplyChannel(guildId, textChannelId)
@@ -82,18 +82,11 @@ export class PlayerManager {
     }
 
     private remove(guildId: string): void {
-        const player = this.players.get(guildId);
-        if (player) {
-            player.tryDisconnect();
-            this.players.delete(guildId);
-            this.replyChannels.delete(guildId)
-            player.removeAllListeners()
-        }
-        this.logger.log(`Removed player for guild: [${guildId}]`)
+        this.players.get(guildId)?.tryDisconnect();
     }
 
-    private createPlayer(guildId: string) {
-            const player = new GuildPlayerInstance(guildId)
+    private createPlayer(guildId: string, vc: VoiceBasedChannel) {
+            const player = new GuildPlayerInstance(guildId, vc)
             this.players.set(guildId, player)
             this.logger.log(`Added player for guild: [${guildId}]`)
 
@@ -101,6 +94,13 @@ export class PlayerManager {
             // setup listener for new player
             player.on("error", () => {
                 const channel = this.replyChannels.get(guildId)
+            })
+
+            player.on("disconnected", () => {
+                this.players.delete(guildId);
+                this.replyChannels.delete(guildId)
+                player.removeAllListeners()
+                this.logger.log(`Removed player for guild: [${guildId}]`)
             })
 
             player.on("playingNewTrack", (cause) => {

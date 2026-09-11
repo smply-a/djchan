@@ -52,29 +52,33 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     }
 
     // utils
-    // ? possible fehler quelle, merken für zukunft bei bugs mit music commands
     protected async getPlayerAccess(interaction: ChatInputCommandInteraction) {
         const {player, userVc} = this.getPlayerAccessParams(interaction)
         if (!player) throw new CLientNotConnected()
 
-        await this.ensureSameChannel(player, userVc.id)
+        await player.ready()
+        this.ensureSameChannel(player, userVc.id)
+
         return player
     }
 
     protected async getOrCreatePlayerAccess(interaction: ChatInputCommandInteraction) {
-        let {player, userVc, guildId} = this.getPlayerAccessParams(interaction)
+        const {player, userVc, guildId} = this.getPlayerAccessParams(interaction)
         
         if (player) {
-            await this.ensureSameChannel(player, userVc.id)
-        } else {
-            player = interaction.client.players.getOrCreate(guildId, interaction.channelId);
-        }
+            await player.ready()
+            this.ensureSameChannel(player, userVc.id)
         
-        return { player, userVc }
+            return player
+        }
+
+        const newPlayer = interaction.client.players.getOrCreate(guildId, userVc, interaction.channelId);
+        await newPlayer.ready()
+        
+        return newPlayer
     }
 
-    protected async ensureSameChannel(player: GuildPlayerInstance, userChannelId: string) {
-        if (player.getChannelId() === null) await player.waitJoin()
+    private ensureSameChannel(player: GuildPlayerInstance, userChannelId: string) {
         if (player.getChannelId() !== userChannelId) throw new MemberNotInSameChannel()
     }
 

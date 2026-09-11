@@ -3,7 +3,7 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
 import { type ChildProcess } from "child_process";
 import type { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
-import { AlreadyPaused, AlreadyPlaying, CLientNotConnected, NotPlaying, VcJoinTimeOut } from "../types/PublicErrors.js";
+import { AlreadyPaused, AlreadyPlaying, NotPlaying, PublicError, VcJoinTimeOut } from "../types/PublicErrors.js";
 import { Logger } from "./Logger.js";
 
 interface PlayerState {
@@ -39,18 +39,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     // mutex on join
-    private joining: Promise<unknown> | null = null
-
-    public getChannelId(): string | null {
-        if (!this.voice) return null
-        return this.voice.channelId
-    }
-
-    public setNewChannelId(newChannelId: string) {
-        if (!this.voice) throw new Error ("cant update channel if not connected")
-        this.voice.channelId = newChannelId
-        this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
-    }
+    #ready: Promise<void | PublicError>
 
     #logger?: Logger
     private get logger(): Logger {
@@ -59,11 +48,45 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
             origin: `GuildPlayerInstance: [${this.guildId}]`
         })
     }
+
+    public static async asyncCreate(guildId: string, vc: VoiceBasedChannel) {
+        const player = new this(guildId, vc)
+        await player.ready()
+        return player
+    }
+
+    public async ready() {
+        const error = await this.#ready
+
+        if (error) throw error
+    }
     
-    constructor(guildId: string) {
+    public constructor(guildId: string, vc: VoiceBasedChannel) {
         super()
         this.guildId = guildId
         this.audioPlayer = createAudioPlayer()
+
+        // Join voice channel
+        this.voice = {
+            connection: joinVoiceChannel({
+                channelId: vc.id,
+                guildId: this.guildId,
+                adapterCreator: vc.guild.voiceAdapterCreator,
+            }),
+            channelId: vc.id
+        }
+
+        this.#ready = entersState(this.voice.connection, VoiceConnectionStatus.Ready, 30_000)
+            .then(() => {
+                this.voice.connection.subscribe(this.audioPlayer)
+            })
+            .catch((error) => {
+                this.logger.error(error)
+                this.tryDisconnect()
+                return new VcJoinTimeOut()
+            })
+    
+        // register Player Events
 
         this.audioPlayer.on("error", (error) => {
             this.emit("error", error)
@@ -94,6 +117,15 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         })
     }
 
+    public getChannelId() {
+        return this.voice.channelId
+    }
+
+    public setNewChannelId(newChannelId: string) {
+        this.voice.channelId = newChannelId
+        this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
+    }
+
     public get state(): PlayerState {
         return {
             track: this.track?.data ?? null,
@@ -102,69 +134,19 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
     }
 
-    public async waitJoin() {
-        if (this.joining) {
-            await this.joining
-        }
-    }
-
-    public async tryJoin(vc: VoiceBasedChannel) {
-        try {
-            // waits for "mutex"
-            if (this.joining) {
-                await this.joining
-            }
-
-            // check if bot already connected
-            if (this.voice && this.voice.connection.state.status !== VoiceConnectionStatus.Destroyed) {
-                return
-            }
-
-            // bot not already connected
-            this.voice = {
-                connection: joinVoiceChannel({
-                    channelId: vc.id,
-                    guildId: this.guildId,
-                    adapterCreator: vc.guild.voiceAdapterCreator,
-                }),
-                channelId: vc.id
-            }
-
-            // set mutex 
-            // ? i believe this is a mutex because js only switches context after an await
-            this.joining = entersState(this.voice.connection, VoiceConnectionStatus.Ready, 30_000)
-            await this.joining
-            this.voice.connection.subscribe(this.audioPlayer)
-
-        } catch (error) {
-            this.tryDisconnect()
-            throw new VcJoinTimeOut()
-
-        } finally {
-            // reset mutex
-            this.joining = null
-        }
-        
-    }
-
     public tryDisconnect() {
-        this.stop()
-        if (this.voice) {
+        if (this.voice.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+            this.stop()
             this.voice.connection.destroy()
-            this.voice = null
-            this.emit("disconnected")
         }
+        this.emit("disconnected")
     }
 
-    // ! cause is "command"
     public addTrack(track: Track) {
-        if (!this.voice) {
-            throw new CLientNotConnected()
-        }
-
         this.queue.push(track)
 
         if (this.status === AudioPlayerStatus.Idle && !this.track) {
+            // ! cause is "command"
             this.playNextTrack("command")
             return false
         } else {
@@ -173,16 +155,13 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     public skip() {
+        // ! cause is "command"
         this.playNextTrack("command")
         if (!this.track) return null
         return this.track.data
     }
 
     public pause() {
-        if (!this.voice) {
-            throw new CLientNotConnected()
-        }
-
         switch (this.status) {
 
             case AudioPlayerStatus.Paused: {
@@ -201,10 +180,6 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     public resume() {
-        if (!this.voice) {
-            throw new CLientNotConnected()
-        }
-
         switch (this.status) {
             case AudioPlayerStatus.Buffering:
             case AudioPlayerStatus.Playing: {

@@ -16,7 +16,7 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
 
         const track = player.skip()
         if (!track) {
-            return
+            return // TODO
         }
 
         await interaction.reply(NowPlaying({type: "skipped", track}))

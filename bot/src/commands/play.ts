@@ -32,16 +32,14 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
             return
         }
 
-        const {player, userVc} = await this.getOrCreatePlayerAccess(interaction)
+        const player = await this.getOrCreatePlayerAccess(interaction)
 
         await interaction.reply(SongSearch({type: "searching", query}))
-
-        // search and play
+        
         const track = await ytdlp.getTrack(query)
         
         // await interaction.editReply(SongSearch({type: "found", track}))
 
-        await player.tryJoin(userVc)
         const inQueue = player.addTrack(track)
 
         if (inQueue) {

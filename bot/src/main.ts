@@ -4,6 +4,7 @@ import MyClient from "./client.js"
 import { Pause } from './commands/pause.js'
 import { Ping } from "./commands/ping.js"
 import { Play } from './commands/play.js'
+import { Skip } from './commands/skip.js'
 import { InteractionCreate, Ready } from "./events/discordjs/index.js"
 
 const intents = [
@@ -29,7 +30,8 @@ async function main() {
         commands: [
             Ping,
             Play,
-            Pause
+            Pause,
+            Skip
         ],
         events: [
             Ready,
