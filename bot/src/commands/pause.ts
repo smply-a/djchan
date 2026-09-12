@@ -1,6 +1,7 @@
 import { ApplicationCommandType, type CacheType, type ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import Paused from "../components/replies/Paused.js";
+import loading from "../components/replies/loading.js";
+import paused from "../components/replies/paused.js";
 
 
 export class Pause extends Command<ApplicationCommandType.ChatInput> {
@@ -13,9 +14,11 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+        interaction.reply(loading({ephemeral: false}))
+
         const player = await this.getPlayerAccess(interaction)
 
         player.pause()
-        await interaction.reply(Paused())
+        await interaction.editReply(paused())
     }
 }

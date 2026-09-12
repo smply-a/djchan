@@ -54,6 +54,7 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     // utils
     protected async getPlayerAccess(interaction: ChatInputCommandInteraction) {
         const {player, userVc} = this.getPlayerAccessParams(interaction)
+        
         if (!player) throw new CLientNotConnected()
 
         await player.ready()

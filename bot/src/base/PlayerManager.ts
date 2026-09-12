@@ -1,4 +1,6 @@
-import type { Client, VoiceBasedChannel } from "discord.js"
+import { MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js"
+import queueEmpty from "../components/replies/queueEmpty.js"
+import { type ReplyPayload } from "../types/index.js"
 import { GuildPlayerInstance } from "./GuildPlayerInstance.js"
 import { Logger } from "./Logger.js"
 
@@ -86,37 +88,70 @@ export class PlayerManager {
     }
 
     private createPlayer(guildId: string, vc: VoiceBasedChannel) {
-            const player = new GuildPlayerInstance(guildId, vc)
-            this.players.set(guildId, player)
-            this.logger.log(`Added player for guild: [${guildId}]`)
+        const player = new GuildPlayerInstance(guildId, vc)
+        this.players.set(guildId, player)
+        this.logger.log(`Added player for guild: [${guildId}]`)
 
-            // todo button on error with skip this song?
-            // setup listener for new player
-            player.on("error", () => {
-                const channel = this.replyChannels.get(guildId)
-            })
+        // todo button on error with skip this song?
+        // setup listener for new player
+        player.on("error", async () => {
+            const channelId = this.replyChannels.get(guildId)
 
-            player.on("disconnected", () => {
-                this.players.delete(guildId);
-                this.replyChannels.delete(guildId)
-                player.removeAllListeners()
-                this.logger.log(`Removed player for guild: [${guildId}]`)
-            })
+            try {
+                // this.sendMessage(channelId,)
+            } catch (error) {
+                this.logger.error(error)
+            }
+        })
 
-            player.on("playingNewTrack", (cause) => {
-                const channel = this.replyChannels.get(guildId)
-                if (cause === "command") return
+        player.on("disconnected", () => {
+            this.players.delete(guildId);
+            this.replyChannels.delete(guildId)
+            player.removeAllListeners()
+            this.logger.log(`Removed player for guild: [${guildId}]`)
+        })
 
-                // only handle noninteraction events
-            })
+        player.on("playingNewTrack", async (cause) => {
+            const channelId = this.replyChannels.get(guildId)
+            if (cause === "command") return
 
-            player.on("queueEnd", (cause) => {
-                const channel = this.replyChannels.get(guildId)
-                if (cause === "command") return
+            // only handle noninteraction events
+            try {
+                // this.sendMessage(channelId, )
+            } catch (error) {
+                this.logger.error(error)
+            }
+        })
 
-                // only handle noninteraction events
-            })
+        player.on("queueEnd", async (cause) => {
+            const channelId = this.replyChannels.get(guildId)
+            if (cause === "command") return
 
-            return player
+            // only handle noninteraction events
+            try {
+                this.sendMessage(channelId, queueEmpty())
+            } catch (error) {
+                this.logger.error(error)
+            }
+        })
+
+        return player
+    }
+
+    private async sendMessage(channelId: string | undefined, message: ReplyPayload) {
+        if (!channelId) {
+            throw new Error("Could not react to error in Playermanager event listener")
+        }
+        
+        const channel = await this.client.channels.fetch(channelId)
+
+        if (!channel || !channel.isSendable()) throw new Error("could not get valid reply channel for player manager messages")
+
+        // cannot send ephemeral
+        const payload: MessageCreateOptions = {
+            ...message,
+            flags: MessageFlags.IsComponentsV2
+        }
+        channel.send(payload)
     }
 }

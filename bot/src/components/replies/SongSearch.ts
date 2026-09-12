@@ -4,7 +4,7 @@ import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 import { songInfo } from "../TextComponents/songInfo.js";
 
-export default function SearchSong(
+export default function searchSong(
     args: {type: "searching", query: string}
     | {type: "found", track: Track}
     | {type: "queued", track: Track}

@@ -1,9 +1,10 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import NowPlaying from "../components/replies/NowPlaying.js";
-import Resumed from "../components/replies/Resumed.js";
-import SongSearch from "../components/replies/SongSearch.js";
+import loading from "../components/replies/loading.js";
+import nowPlaying from "../components/replies/nowPlaying.js";
+import resumed from "../components/replies/resumed.js";
+import songSearch from "../components/replies/songSearch.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -26,27 +27,30 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         // resume
         if (!query) {
+            interaction.reply(loading({ephemeral: false}))
+
             const player = await this.getPlayerAccess(interaction)
             player.resume()
-            await interaction.reply(Resumed())
+            await interaction.editReply(resumed())
             return
         }
 
-        const player = await this.getOrCreatePlayerAccess(interaction)
+        await interaction.reply(songSearch({type: "searching", query}))
 
-        await interaction.reply(SongSearch({type: "searching", query}))
-        
-        const track = await ytdlp.getTrack(query)
+        const [track, player] = await Promise.all([
+            ytdlp.getTrack(query),
+            this.getOrCreatePlayerAccess(interaction)
+        ])
         
         // await interaction.editReply(SongSearch({type: "found", track}))
 
         const inQueue = player.addTrack(track)
 
         if (inQueue) {
-            await interaction.editReply(SongSearch({type: "queued", track}))
+            await interaction.editReply(songSearch({type: "queued", track}))
             return
         }
 
-        await interaction.editReply(NowPlaying({type: "nowPlaying", track}))
+        await interaction.editReply(nowPlaying({type: "nowPlaying", track}))
     }
 }

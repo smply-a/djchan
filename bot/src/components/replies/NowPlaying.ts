@@ -4,7 +4,7 @@ import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 import { songInfo } from "../TextComponents/songInfo.js";
 
-export default function NowPlaying(args: 
+export default function nowPlaying(args: 
     {type: "nowPlaying", track: Track} | 
     {type: "skipped", track: Track}
 ): ReplyPayload {

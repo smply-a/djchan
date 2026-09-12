@@ -1,6 +1,6 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import PingReply from "../components/replies/PingReply.js";
+import pingReply from "../components/replies/pingReply.js";
 
 export class Ping extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -13,11 +13,11 @@ export class Ping extends Command<ApplicationCommandType.ChatInput> {
 
     // TODO make multiple pings to calc average
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        await interaction.reply(PingReply({type: "loading"}))
+        await interaction.reply(pingReply({type: "loading"}))
 
         const firstReply = await interaction.fetchReply()
         const ping = firstReply.createdTimestamp - interaction.createdTimestamp
 
-        await interaction.editReply(PingReply({type: "result", ping}))
+        await interaction.editReply(pingReply({type: "result", ping}))
     }
 }

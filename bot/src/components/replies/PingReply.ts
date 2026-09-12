@@ -2,7 +2,7 @@ import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
 import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
-export default function PingReply(args: {type: "loading"} | {type: "result", ping: number}): ReplyPayload {
+export default function pingReply(args: {type: "loading"} | {type: "result", ping: number}): ReplyPayload {
     const message = args.type === "loading" 
         ? "### pinging server..." 
         : `### Ping: \`${args.ping}\`ms`

@@ -2,10 +2,10 @@ import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
 import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
-export default function resumed(): ReplyPayload {
+export default function queueEmpty(): ReplyPayload {
     const container = new ContainerBuilder()
         .setAccentColor(Color.general)
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent("### resumed"))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent("### queue empty"))
 
     return {
         components: [container],
