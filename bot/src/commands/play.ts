@@ -10,7 +10,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
         super({
             name: "play",
-            description: "play song | resume",
+            description: "play song | resume stream",
             type: ApplicationCommandType.ChatInput,
             options: [{
                 name: "query",
@@ -27,9 +27,10 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         // resume
         if (!query) {
-            interaction.reply(loading({ephemeral: false}))
-
-            const player = await this.getPlayerAccess(interaction)
+            const [player] = await Promise.all([
+                this.getPlayerAccess(interaction), 
+                interaction.reply(loading({ephemeral: false}))
+            ])
             player.resume()
             await interaction.editReply(resumed())
             return

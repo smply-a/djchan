@@ -9,14 +9,15 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
         super({
             name: "pause",
             type: ApplicationCommandType.ChatInput,
-            description: "pause song"
+            description: "pauses stream"
         })
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        interaction.reply(loading({ephemeral: false}))
-
-        const player = await this.getPlayerAccess(interaction)
+        const [player] = await Promise.all([
+            this.getPlayerAccess(interaction), 
+            interaction.reply(loading({ephemeral: false}))
+        ])
 
         player.pause()
         await interaction.editReply(paused())

@@ -9,14 +9,15 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
         super({
             name: "skip",
             type: ApplicationCommandType.ChatInput,
-            description: "skips song"
+            description: "skips stream"
         })
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        interaction.reply(loading({ephemeral: false}))
-        
-        const player = await this.getPlayerAccess(interaction)
+        const [player] = await Promise.all([
+            this.getPlayerAccess(interaction), 
+            interaction.reply(loading({ephemeral: false}))
+        ])
 
         const track = player.skip()
         if (!track) {

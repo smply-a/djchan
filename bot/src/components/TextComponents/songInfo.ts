@@ -6,7 +6,7 @@ export function songInfo({track, size} : {track: Track, size: "primary" | "secon
     return new SectionBuilder()
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
             `${size === "primary" ? `## [${track.title}](${track.url})` : `**[${track.title}](${track.url})**`}\n` +
-            `by ${track.interpret} | ` + `\`${getDurationString(track.duration)}\``
+            `by ${track.interpret} | ` + `${getDurationString(track.duration)}`
         ))
         .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
 }

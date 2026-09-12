@@ -1,5 +1,4 @@
 import { MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js"
-import queueEmpty from "../components/replies/queueEmpty.js"
 import { type ReplyPayload } from "../types/index.js"
 import { GuildPlayerInstance } from "./GuildPlayerInstance.js"
 import { Logger } from "./Logger.js"
@@ -87,6 +86,7 @@ export class PlayerManager {
         this.players.get(guildId)?.tryDisconnect();
     }
 
+    // todo events
     private createPlayer(guildId: string, vc: VoiceBasedChannel) {
         const player = new GuildPlayerInstance(guildId, vc)
         this.players.set(guildId, player)
@@ -94,14 +94,8 @@ export class PlayerManager {
 
         // todo button on error with skip this song?
         // setup listener for new player
-        player.on("error", async () => {
+        player.on("error", () => {
             const channelId = this.replyChannels.get(guildId)
-
-            try {
-                // this.sendMessage(channelId,)
-            } catch (error) {
-                this.logger.error(error)
-            }
         })
 
         player.on("disconnected", () => {
@@ -111,28 +105,18 @@ export class PlayerManager {
             this.logger.log(`Removed player for guild: [${guildId}]`)
         })
 
-        player.on("playingNewTrack", async (cause) => {
+        player.on("playingNewTrack", (cause) => {
             const channelId = this.replyChannels.get(guildId)
             if (cause === "command") return
 
             // only handle noninteraction events
-            try {
-                // this.sendMessage(channelId, )
-            } catch (error) {
-                this.logger.error(error)
-            }
         })
 
-        player.on("queueEnd", async (cause) => {
+        player.on("queueEnd", (cause) => {
             const channelId = this.replyChannels.get(guildId)
             if (cause === "command") return
 
             // only handle noninteraction events
-            try {
-                this.sendMessage(channelId, queueEmpty())
-            } catch (error) {
-                this.logger.error(error)
-            }
         })
 
         return player

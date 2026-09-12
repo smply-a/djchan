@@ -260,6 +260,9 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     private tryKillStream() {
+        // stop playing remaining buffer
+        this.audioPlayer.stop(true)
+        
         const stream = this.track?.stream
         this.track = null
 

@@ -14,7 +14,7 @@ export class Ready extends Event<"clientReady"> {
         client.user.setPresence({
             status: "online",
             activities: [{
-                name: "streaming yt music", 
+                name: "among us", 
                 type: 4
             }]
         })

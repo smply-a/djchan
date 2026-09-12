@@ -7,7 +7,7 @@ export class Ping extends Command<ApplicationCommandType.ChatInput> {
         super({
             name: "ping",
             type: ApplicationCommandType.ChatInput,
-            description: "pings the server"
+            description: "pings the server and returns latency"
         })
     }
 
