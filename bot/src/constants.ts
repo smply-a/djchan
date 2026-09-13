@@ -4,6 +4,7 @@ export enum Color {
     player = 0xffffff,
 }
 
-export enum Emojis {
+export enum Emoji {
     error = "",
+    loading = "<a:loadingbeta:1548781532590776420>",
 }

@@ -14,11 +14,10 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
     }
 
     public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        const [player] = await Promise.all([
-            this.getPlayerAccess(interaction), 
-            interaction.reply(loading({ephemeral: false}))
-        ])
-
+        
+        await interaction.reply(loading({ephemeral: false, type: "skip"}))
+        const player = await this.getPlayerAccess(interaction)
+        
         const track = player.skip()
         if (!track) {
             interaction.editReply(queueEmpty())

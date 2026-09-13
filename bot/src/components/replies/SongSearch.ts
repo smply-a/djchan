@@ -2,7 +2,7 @@ import type { Track } from "@app/player";
 import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
 import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
-import { songInfo } from "../TextComponents/songInfo.js";
+import { songInfo } from "../sections/songInfo.js";
 
 export default function searchSong(
     args: {type: "searching", query: string}
@@ -26,7 +26,7 @@ export default function searchSong(
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent("### result")
             )
-            container.addSectionComponents(songInfo({track: args.track, size: "secondary"}))
+            container.addSectionComponents(songInfo({track: args.track}))
             break
         }
 
@@ -35,7 +35,7 @@ export default function searchSong(
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent("### queued")
             )
-            container.addSectionComponents(songInfo({track: args.track, size: "secondary"}))
+            container.addSectionComponents(songInfo({track: args.track}))
             break
         }
     }

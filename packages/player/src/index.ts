@@ -9,4 +9,6 @@ export interface Track {
         duration: number,
         thumbnail: string,
         uploader_url: string,
+        view_count: number,
+        album?: string
     }

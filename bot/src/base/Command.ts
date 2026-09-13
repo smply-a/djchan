@@ -52,6 +52,12 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     }
 
     // utils
+    protected async deleteReply(seconds: number, interaction: ChatInputCommandInteraction) {
+        setTimeout(() => {
+            void interaction.deleteReply().catch(()=>{})
+        }, seconds * 1000)
+    }
+
     protected async getPlayerAccess(interaction: ChatInputCommandInteraction) {
         const {player, userVc} = this.getPlayerAccessParams(interaction)
         

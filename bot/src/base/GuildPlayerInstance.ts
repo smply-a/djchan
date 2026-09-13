@@ -23,8 +23,8 @@ interface GuildPlayerEvents {
 }
 
 export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
-    private track: {
-        data: Track,
+    private song: {
+        track: Track,
         stream: ChildProcess,
         cause: PlayerEventCause
     } | null = null
@@ -108,13 +108,18 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                 return
             }
 
-            if(!this.track) {
+            if(!this.song) {
                 this.emit("error", new Error("playing but no track is set in player"))
                 return
             }
 
-            this.emit("playingNewTrack", this.track.cause, this.track.data)
+            this.emit("playingNewTrack", this.song.cause, this.song.track)
         })
+    }
+
+    public get track() {
+        if (!this.song) return null
+        return this.song.track
     }
 
     public getChannelId() {
@@ -128,7 +133,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
     public get state(): PlayerState {
         return {
-            track: this.track?.data ?? null,
+            track: this.song?.track ?? null,
             queue: [...this.queue],
             status: this.status,
         }
@@ -145,7 +150,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     public addTrack(track: Track) {
         this.queue.push(track)
 
-        if (this.status === AudioPlayerStatus.Idle && !this.track) {
+        if (this.status === AudioPlayerStatus.Idle && !this.song) {
             // ! cause is "command"
             this.playNextTrack("command")
             return false
@@ -157,8 +162,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     public skip() {
         // ! cause is "command"
         this.playNextTrack("command")
-        if (!this.track) return null
-        return this.track.data
+        if (!this.song) return null
+        return this.song.track
     }
 
     public pause() {
@@ -170,7 +175,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
             case AudioPlayerStatus.Playing: {
                 this.audioPlayer.pause()
-                break
+                if (!this.song) throw new Error("Playing without song")
+                return this.song.track
             }
 
             default: {
@@ -188,7 +194,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
             case AudioPlayerStatus.Paused: {
                 this.audioPlayer.unpause()
-                break
+                if (!this.song) throw new Error("Playing without song")
+                return this.song.track
             }
 
             default: {
@@ -214,7 +221,9 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         const next = this.queue.shift()
 
         if (!next) {
-            this.track = null
+            this.song = null
+            // stop playing remaining buffer
+            this.audioPlayer.stop(true) 
             this.emit("queueEnd", cause)
             return
         }
@@ -241,8 +250,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                 });
                 
                 // success
-                this.track = {
-                    data: next,
+                this.song = {
+                    track: next,
                     stream,
                     cause
                 }
@@ -260,11 +269,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     private tryKillStream() {
-        // stop playing remaining buffer
-        this.audioPlayer.stop(true)
-        
-        const stream = this.track?.stream
-        this.track = null
+        const stream = this.song?.stream
+        this.song = null
 
         if (stream) {
             stream.kill("SIGKILL")

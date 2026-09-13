@@ -28,6 +28,7 @@ function isUrl(url: string) {
     }
 }
 
+// TODO DONT GET PLAYLIST WHEN LINK IS PLAYLIST
 export const ytdlp = {
     getWebmOpusStream: (url: string): ChildProcess => {
         if (isUrl(url) && validUrl(url)) {
@@ -85,9 +86,9 @@ export const ytdlp = {
                 try {
                     const data = isurl ? JSON.parse(stdout) : JSON.parse(stdout).entries[0]
 
-                    // console.log(data)
+                     console.log(data)
 
-                    const {title, channel, duration, thumbnail, duration_string, uploader_url} = data;
+                    const {title, channel, duration, thumbnail, view_count, uploader_url, album} = data;
                     const url = data.url ?? data.original_url;
 
                     const track: Track = {
@@ -96,7 +97,9 @@ export const ytdlp = {
                         interpret: channel,
                         duration,
                         thumbnail,
-                        uploader_url
+                        uploader_url,
+                        view_count,
+                        album
                     }
                     resolve(track);
 

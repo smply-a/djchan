@@ -69,8 +69,6 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         }
 
         // delete message after 5 minutes
-        setTimeout(() => {
-            void interaction.deleteReply().catch(()=>{})
-        }, 5*60_000)
+        this.deleteReply(5*60, interaction)
     }
 }

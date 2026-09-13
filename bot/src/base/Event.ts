@@ -1,4 +1,4 @@
-import type { Awaitable, ClientEvents } from "discord.js";
+import type { Awaitable, ChatInputCommandInteraction, ClientEvents } from "discord.js";
 import { Logger } from "./Logger.js";
 
 export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
@@ -21,5 +21,11 @@ export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
         } catch (error) {
             this.logger.log(error)
         }
+    }
+
+    protected async deleteReply(seconds: number, interaction: ChatInputCommandInteraction) {
+        setTimeout(() => {
+            void interaction.deleteReply().catch(()=>{})
+        }, seconds * 1000)
     }
 }

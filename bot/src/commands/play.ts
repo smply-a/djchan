@@ -27,12 +27,12 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         // resume
         if (!query) {
-            const [player] = await Promise.all([
-                this.getPlayerAccess(interaction), 
-                interaction.reply(loading({ephemeral: false}))
-            ])
-            player.resume()
-            await interaction.editReply(resumed())
+            await interaction.reply(loading({ephemeral: false, type: "resume"}))
+            const player = await this.getPlayerAccess(interaction) 
+            
+            const track = player.resume()
+            await interaction.editReply(resumed(track))
+            this.deleteReply(60, interaction)
             return
         }
 

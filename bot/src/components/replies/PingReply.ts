@@ -5,7 +5,7 @@ import type { ReplyPayload } from "../../types/index.js";
 export default function pingReply(args: {type: "loading"} | {type: "result", ping: number}): ReplyPayload {
     const message = args.type === "loading" 
         ? "### pinging server..." 
-        : `### Ping: \`${args.ping}\`ms`
+        : `### ping took \`${args.ping}\`ms`
 
     const container = new ContainerBuilder()
         .setAccentColor(Color.general)
