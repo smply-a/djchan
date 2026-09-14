@@ -8,7 +8,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         super("interactionCreate")
     }
 
-    public async run(interaction: Interaction): Promise<void> {
+    protected async execute(interaction: Interaction): Promise<void> {
         // dont allow commands in dms
         if (!interaction.guild) {
             // TODO

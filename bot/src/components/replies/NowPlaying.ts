@@ -5,12 +5,12 @@ import type { ReplyPayload } from "../../types/index.js";
 import { songInfo } from "../sections/songInfo.js";
 
 export default function nowPlaying(args: 
-    {type: "nowPlaying", track: Track} | 
-    {type: "skipped", track: Track}
+    {state: "nowPlaying", track: Track} | 
+    {state: "skipped", track: Track}
 ): ReplyPayload {
     const container = new ContainerBuilder().setAccentColor(Color.player);
 
-    const {type, track} = args
+    const {state: type, track} = args
     
     switch (type) {
         case "nowPlaying": {

@@ -1,4 +1,4 @@
-type Type = "command" | "event" | "internal"
+type Type = "command" | "event" | "internal" | "button"
 interface Options {
     type: Type
     origin: string

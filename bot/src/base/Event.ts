@@ -3,7 +3,7 @@ import { Logger } from "./Logger.js";
 
 export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
     constructor(public readonly name: T, public readonly once: boolean = false) {}
-    protected abstract run(...args: ClientEvents[T]): Awaitable<void>
+    protected abstract execute(...args: ClientEvents[T]): Awaitable<void>
 
     // lazy init
     #logger?: Logger
@@ -15,9 +15,9 @@ export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
     }
 
     // Error catching
-    public async execute(...args: ClientEvents[T]): Promise<void> {
+    public async run(...args: ClientEvents[T]): Promise<void> {
         try {
-            await this.run(...args)
+            await this.execute(...args)
         } catch (error) {
             this.logger.log(error)
         }

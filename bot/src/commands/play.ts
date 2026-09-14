@@ -1,9 +1,8 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import loading from "../components/replies/loading.js";
 import nowPlaying from "../components/replies/nowPlaying.js";
-import resumed from "../components/replies/resumed.js";
+import resumeReply from "../components/replies/resumReply.js";
 import songSearch from "../components/replies/songSearch.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
@@ -21,22 +20,22 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         });
     }
 
-    public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+    protected async execute(interaction: ChatInputCommandInteraction): Promise<void> {
 
         const query = interaction.options.getString("query");
 
         // resume
         if (!query) {
-            await interaction.reply(loading({ephemeral: false, type: "resume"}))
+            await interaction.reply(resumeReply({state: "loading"}))
             const player = await this.getPlayerAccess(interaction) 
-            
+
             const track = player.resume()
-            await interaction.editReply(resumed(track))
+            await interaction.editReply(resumeReply({state: "resumed", track}))
             this.deleteReply(60, interaction)
             return
         }
 
-        await interaction.reply(songSearch({type: "searching", query}))
+        await interaction.reply(songSearch({state: "searching", query}))
 
         const [track, player] = await Promise.all([
             ytdlp.getTrack(query),
@@ -48,10 +47,10 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         const inQueue = player.addTrack(track)
 
         if (inQueue) {
-            await interaction.editReply(songSearch({type: "queued", track}))
+            await interaction.editReply(songSearch({state: "queued", track}))
             return
         }
 
-        await interaction.editReply(nowPlaying({type: "nowPlaying", track}))
+        await interaction.editReply(nowPlaying({state: "nowPlaying", track}))
     }
 }

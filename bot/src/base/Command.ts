@@ -1,4 +1,4 @@
-import { type ApplicationCommandType, type Awaitable, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
+import { type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
 import { CLientNotConnected, MemberNotConnected, MemberNotInSameChannel, OnlyInCachedGuild } from "../types/index.js";
 import type { GuildPlayerInstance } from "./GuildPlayerInstance.js";
 import { Logger } from "./Logger.js";
@@ -35,7 +35,7 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
 
 
     // implementation of command
-    protected abstract execute(interaction: CommandTypeMap[T]["interaction"]): Awaitable<void>
+    protected abstract execute(interaction: CommandTypeMap[T]["interaction"]): Promise<void>
 
     // filter 
     public async run(interaction: CommandTypeMap[T]["interaction"]) {

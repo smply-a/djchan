@@ -5,14 +5,14 @@ import type { ReplyPayload } from "../../types/index.js";
 import { songInfo } from "../sections/songInfo.js";
 
 export default function searchSong(
-    args: {type: "searching", query: string}
-    | {type: "found", track: Track}
-    | {type: "queued", track: Track}
+    args: {state: "searching", query: string}
+    | {state: "found", track: Track}
+    | {state: "queued", track: Track}
 ): ReplyPayload {
     const container = new ContainerBuilder()
         .setAccentColor(Color.player)
 
-    switch (args.type) {
+    switch (args.state) {
         case "searching": {
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 "### searching\n" + 

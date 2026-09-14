@@ -1,4 +1,4 @@
-import type { InteractionReplyOptions, InteractionEditReplyOptions } from "discord.js";
+import type { InteractionEditReplyOptions, InteractionReplyOptions } from "discord.js";
 
 export * from "./PublicErrors.js";
 

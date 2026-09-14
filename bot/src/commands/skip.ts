@@ -1,8 +1,8 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import loading from "../components/replies/loading.js";
 import nowPlaying from "../components/replies/nowPlaying.js";
 import queueEmpty from "../components/replies/queueEmpty.js";
+import skipped from "../components/replies/skipped.js";
 
 export class Skip extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -13,17 +13,17 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
         })
     }
 
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         
-        await interaction.reply(loading({ephemeral: false, type: "skip"}))
+        await interaction.reply(skipped({state: "loading"}))
         const player = await this.getPlayerAccess(interaction)
-        
+
         const track = player.skip()
         if (!track) {
             interaction.editReply(queueEmpty())
             return
         }
 
-        await interaction.editReply(nowPlaying({type: "skipped", track}))
+        await interaction.editReply(nowPlaying({state: "skipped", track}))
     }
 }

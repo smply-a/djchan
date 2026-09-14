@@ -12,12 +12,12 @@ export class Ping extends Command<ApplicationCommandType.ChatInput> {
     }
 
     // TODO make multiple pings to calc average
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        await interaction.reply(pingReply({type: "loading"}))
+    protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+        await interaction.reply(pingReply({state: "loading"}))
 
         const firstReply = await interaction.fetchReply()
         const ping = firstReply.createdTimestamp - interaction.createdTimestamp
 
-        await interaction.editReply(pingReply({type: "result", ping}))
+        await interaction.editReply(pingReply({state: "result", ping}))
     }
 }

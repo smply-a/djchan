@@ -4,7 +4,7 @@ import type { ReplyPayload } from "../../types/index.js";
 
 export default function queueEmpty(): ReplyPayload {
     const container = new ContainerBuilder()
-        .setAccentColor(Color.general)
+        .setAccentColor(Color.bot)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent("### queue empty"))
 
     return {

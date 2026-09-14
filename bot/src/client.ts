@@ -42,9 +42,9 @@ export default class BotClient extends Client {
             const evnt = new event()
             const {once, name} = evnt
             if (once) {
-                this.once(name, (...args) => evnt.execute(...args))
+                this.once(name, (...args) => evnt.run(...args))
             } else {
-                this.on(name, (...args) => evnt.execute(...args))
+                this.on(name, (...args) => evnt.run(...args))
             }
             this.events.set(name, evnt)
         })

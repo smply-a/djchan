@@ -159,6 +159,10 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
     }
 
+    public insert(track: Track, index: number) {
+        this.queue.splice(index, 0, track)
+    } 
+
     public skip() {
         // ! cause is "command"
         this.playNextTrack("command")
