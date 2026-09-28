@@ -10,7 +10,7 @@ export default function searchSong(
     | {state: "queued", track: Track}
 ): ReplyPayload {
     const container = new ContainerBuilder()
-        .setAccentColor(Color.player)
+        .setAccentColor(Color.bot)
 
     switch (args.state) {
         case "searching": {

@@ -86,7 +86,7 @@ export const ytdlp = {
                 try {
                     const data = isurl ? JSON.parse(stdout) : JSON.parse(stdout).entries[0]
 
-                     console.log(data)
+                    // console.log(data)
 
                     const {title, channel, duration, thumbnail, view_count, uploader_url, album} = data;
                     const url = data.url ?? data.original_url;

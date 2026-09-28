@@ -2,7 +2,12 @@
   "name": "@app/shared",
   "version": "1.0.0",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./src/index.js",
+
+  "scripts": {
+    "build": "tsc"
+  },
+
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
     "dotenv": "^17.4.2"

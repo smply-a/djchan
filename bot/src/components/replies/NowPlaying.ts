@@ -8,7 +8,7 @@ export default function nowPlaying(args:
     {state: "nowPlaying", track: Track} | 
     {state: "skipped", track: Track}
 ): ReplyPayload {
-    const container = new ContainerBuilder().setAccentColor(Color.player);
+    const container = new ContainerBuilder().setAccentColor(Color.bot);
 
     const {state: type, track} = args
     

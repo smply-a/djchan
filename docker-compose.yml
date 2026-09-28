@@ -1,0 +1,10 @@
+name: djchan
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bot
+    env_file:
+      - .env
+    restart: unless-stopped

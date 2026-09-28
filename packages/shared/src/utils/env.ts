@@ -7,11 +7,15 @@ export const loadEnv = () => {
     // Ich muss also nur wissen, wo env relativ zu dieser datei liegt
     const fullPath = path.resolve(import.meta.dirname, '../../../../', '.env')
 
-    const result = dotenv.config({ path: fullPath }).parsed
-    
-    if (!result) {
-        throw new Error(`[.env Fehler]: Datei existiert nicht unter: ${fullPath}`)
+    const result = dotenv.config({ path: fullPath })
+
+    if (result.error && !process.env.DISCORD_TOKEN) {
+        console.warn(`[Env] sysvars missing`);
+    } else if (!result.error) {
+        console.log(`[Env] loaded .env file`);
+    } else {
+        console.log(`[Env] syscvrs (Docker) used`);
     }
 
-    return result
+    return process.env;
 }

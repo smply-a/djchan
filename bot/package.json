@@ -4,7 +4,8 @@
   "type": "module",
   "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "dev": "tsx --watch src/main.ts"
+    "dev": "tsx --watch src/main.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@app/shared": "workspace:*",

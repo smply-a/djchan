@@ -12,9 +12,9 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
         })
     }
 
-    public async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         await interaction.reply(pauseReply({state: "loading"}))
-        const player = await this.getPlayerAccess(interaction)
+        const player = await interaction.client.players.getPlayerGuarded(interaction)
 
         const track = player.pause()
         await interaction.editReply(pauseReply({state: "paused", track}))

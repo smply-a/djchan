@@ -13,7 +13,7 @@ export class Stop extends Command<ApplicationCommandType.ChatInput> {
 
     protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         await interaction.reply(stopReply({state: "loading"}))
-        const player = await this.getPlayerAccess(interaction)
+        const player = await interaction.client.players.getPlayerGuarded(interaction)
         
         player.stop()
         await interaction.editReply(stopReply({state: "stopped"}))

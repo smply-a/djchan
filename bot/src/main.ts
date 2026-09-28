@@ -6,7 +6,7 @@ import { Ping } from "./commands/ping.js"
 import { Play } from './commands/play.js'
 import { Skip } from './commands/skip.js'
 import { Stop } from './commands/stop.js'
-import { InteractionCreate, Ready } from "./events/discordjs/index.js"
+import { GuildJoin, InteractionCreate, Ready } from "./events/discordjs/index.js"
 
 const intents = [
     GatewayIntentBits.Guilds,
@@ -37,7 +37,8 @@ async function main() {
         ],
         events: [
             Ready,
-            InteractionCreate
+            InteractionCreate,
+            GuildJoin
         ]
     })
 }

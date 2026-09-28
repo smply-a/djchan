@@ -6,5 +6,6 @@ export function fillZeros(digits: number, n: number) {
         }
     }
 
-    return str + n
+    // prevent 0 from beeing to much
+    return str + (n > 0 ? n : "")
 }

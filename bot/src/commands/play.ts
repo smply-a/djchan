@@ -27,7 +27,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         // resume
         if (!query) {
             await interaction.reply(resumeReply({state: "loading"}))
-            const player = await this.getPlayerAccess(interaction) 
+            const player = await interaction.client.players.getPlayerGuarded(interaction) 
 
             const track = player.resume()
             await interaction.editReply(resumeReply({state: "resumed", track}))
@@ -39,7 +39,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         const [track, player] = await Promise.all([
             ytdlp.getTrack(query),
-            this.getOrCreatePlayerAccess(interaction)
+            interaction.client.players.getOrCreateGuarded(interaction)
         ])
         
         // await interaction.editReply(SongSearch({type: "found", track}))

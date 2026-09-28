@@ -1,7 +1,9 @@
-import { MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js"
-import { type ReplyPayload } from "../types/index.js"
-import { GuildPlayerInstance } from "./GuildPlayerInstance.js"
-import { Logger } from "./Logger.js"
+import { ButtonInteraction, ChatInputCommandInteraction, MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js";
+import { CLientNotConnected, MemberNotConnected, MemberNotInSameChannel, OnlyInCachedGuild, type ReplyPayload } from "../types/index.js";
+import { GuildPlayerInstance } from "./GuildPlayerInstance.js";
+import { Logger } from "./Logger.js";
+
+type PlayerInteraction = ChatInputCommandInteraction | ButtonInteraction;
 
 export class PlayerManager {
     private players = new Map<string, GuildPlayerInstance>()
@@ -52,19 +54,61 @@ export class PlayerManager {
         })
     }
 
-    public getOrCreate(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
+    // makes sure that the user has the privileges to acces the player
+    public async getPlayerGuarded(interaction: PlayerInteraction) {
+        const {player, userVc} = this.getGuardParams(interaction)
+        
+        if (!player) throw new CLientNotConnected()
+
+        await player.ready()
+        if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
+
+        return player
+    }
+
+    // makes sure that the user has the privileges to acces the player
+    public async getOrCreateGuarded(interaction: PlayerInteraction) {
+        const {player, userVc, guildId} = this.getGuardParams(interaction)
+        
+        if (player) {
+            await player.ready()
+            if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
+        
+            return player
+        }
+
+        const newPlayer = this.createPlayer(guildId, userVc, interaction.channelId);
+        await newPlayer.ready()
+        
+        return newPlayer
+    }
+
+    // get arguments for the guarded functions
+    private getGuardParams(interaction: PlayerInteraction) {
+        if (!interaction.inCachedGuild()) throw new OnlyInCachedGuild()
+        
+        const userVc = interaction.member.voice.channel;
+        if (!userVc) throw new MemberNotConnected()
+
+        return {
+            player: this.get(interaction.guild.id, interaction.channelId),
+            userVc,
+            guildId: interaction.guild.id
+        }
+    }
+
+    private getOrCreate(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
         let player = this.players.get(guildId)
 
         if (!player) {
-            player = this.createPlayer(guildId, vc)
+            player = this.createPlayer(guildId, vc, textChannelId)
         }
 
-        this.setReplyChannel(guildId, textChannelId)
         return player
     }
 
 
-    public get(guildId: string, textChannelId: string) {
+    private get(guildId: string, textChannelId: string) {
         const player = this.players.get(guildId)
 
         if (!player) {
@@ -87,9 +131,10 @@ export class PlayerManager {
     }
 
     // todo events
-    private createPlayer(guildId: string, vc: VoiceBasedChannel) {
+    private createPlayer(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
         const player = new GuildPlayerInstance(guildId, vc)
         this.players.set(guildId, player)
+        this.setReplyChannel(guildId, textChannelId)
         this.logger.log(`Added player for guild: [${guildId}]`)
 
         // todo button on error with skip this song?

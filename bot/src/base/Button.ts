@@ -1,8 +1,9 @@
 import { ButtonInteraction, type InteractionButtonComponentData } from "discord.js";
 import { Logger } from "./Logger.js";
 
-// only logic buttons, link buttons directly over builder
-export abstract class Button<T = null> {
+// ? buttons that are independant from the message they belong to
+// only for logic buttons (with callback), link buttons directly over builder
+export abstract class StaticButton {
     #logger?: Logger
         public get logger(): Logger {
             return this.#logger ??= new Logger({
@@ -13,9 +14,9 @@ export abstract class Button<T = null> {
 
     constructor(public readonly data: InteractionButtonComponentData) {}
 
-    protected abstract execute(interaction: ButtonInteraction, args: T): Promise<void>;
+    protected abstract execute(interaction: ButtonInteraction): Promise<void>;
 
-    public async run (interaction: ButtonInteraction, args: T) {
-        await this.execute(interaction, args)
+    public async run (interaction: ButtonInteraction) {
+        await this.execute(interaction)
     }
 }

@@ -16,7 +16,7 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
     protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         
         await interaction.reply(skipped({state: "loading"}))
-        const player = await this.getPlayerAccess(interaction)
+        const player = await interaction.client.players.getPlayerGuarded(interaction)
 
         const track = player.skip()
         if (!track) {

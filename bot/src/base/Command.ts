@@ -1,6 +1,4 @@
 import { type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
-import { CLientNotConnected, MemberNotConnected, MemberNotInSameChannel, OnlyInCachedGuild } from "../types/index.js";
-import type { GuildPlayerInstance } from "./GuildPlayerInstance.js";
 import { Logger } from "./Logger.js";
 
 type CommandTypeMap = {
@@ -58,47 +56,5 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
         }, seconds * 1000)
     }
 
-    protected async getPlayerAccess(interaction: ChatInputCommandInteraction) {
-        const {player, userVc} = this.getPlayerAccessParams(interaction)
-        
-        if (!player) throw new CLientNotConnected()
-
-        await player.ready()
-        this.ensureSameChannel(player, userVc.id)
-
-        return player
-    }
-
-    protected async getOrCreatePlayerAccess(interaction: ChatInputCommandInteraction) {
-        const {player, userVc, guildId} = this.getPlayerAccessParams(interaction)
-        
-        if (player) {
-            await player.ready()
-            this.ensureSameChannel(player, userVc.id)
-        
-            return player
-        }
-
-        const newPlayer = interaction.client.players.getOrCreate(guildId, userVc, interaction.channelId);
-        await newPlayer.ready()
-        
-        return newPlayer
-    }
-
-    private ensureSameChannel(player: GuildPlayerInstance, userChannelId: string) {
-        if (player.getChannelId() !== userChannelId) throw new MemberNotInSameChannel()
-    }
-
-    private getPlayerAccessParams(interaction: ChatInputCommandInteraction) {
-        if (!interaction.inCachedGuild()) throw new OnlyInCachedGuild()
-        
-        const userVc = interaction.member.voice.channel;
-        if (!userVc) throw new MemberNotConnected()
-
-        return {
-            player: interaction.client.players.get(interaction.guild.id, interaction.channelId),
-            userVc,
-            guildId: interaction.guild.id
-        }
-    }
+    
 }

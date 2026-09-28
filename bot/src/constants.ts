@@ -1,10 +1,10 @@
 export enum Color {
-    error = 0xff0000,
-    bot = 0xffffff,
-    player = 0xffffff,
+    
+    bot = 0xFFA3FD,
+    error = 0xc33149,
 }
 
 export enum Emoji {
-    error = "",
+    error = "<:error:1552620750639341628>",
     loading = "<a:loadingbeta:1548781532590776420>",
 }
