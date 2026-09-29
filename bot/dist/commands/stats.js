@@ -1,2 +1,0 @@
-export {};
-//todo stats like how many songs have been palyed etc, in what guilds he ist etc

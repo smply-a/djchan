@@ -1,8 +1,8 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import nowPlaying from "../components/replies/nowPlaying.js";
-import queueEmpty from "../components/replies/queueEmpty.js";
-import skipped from "../components/replies/skipped.js";
+import { nowPlaying } from "../components/replies/nowPlaying.js";
+import { queueEmpty } from "../components/replies/queueEmpty.js";
+import { skipped } from "../components/replies/skipped.js";
 
 export class Skip extends Command<ApplicationCommandType.ChatInput> {
     constructor() {

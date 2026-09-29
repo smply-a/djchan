@@ -2,7 +2,7 @@ import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
 import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
-export default function queueEmpty(): ReplyPayload {
+export function queueEmpty(): ReplyPayload {
     const container = new ContainerBuilder()
         .setAccentColor(Color.bot)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent("### queue empty"))

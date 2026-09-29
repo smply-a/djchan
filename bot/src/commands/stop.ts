@@ -1,6 +1,6 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import stopReply from "../components/replies/stopReply.js";
+import { stopReply } from "../components/replies/stopReply.js";
 
 export class Stop extends Command<ApplicationCommandType.ChatInput> {
     constructor() {

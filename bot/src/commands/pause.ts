@@ -1,6 +1,6 @@
 import { ApplicationCommandType, type CacheType, type ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import pauseReply from "../components/replies/pauseReply.js";
+import { pauseReply } from "../components/replies/pauseReply.js";
 
 
 export class Pause extends Command<ApplicationCommandType.ChatInput> {

@@ -4,7 +4,7 @@ import type { ReplyPayload } from "../../types/index.js";
 
 type State = "loading" | "stopped"
 
-export default function stopReply(
+export function stopReply(
     args : {state: "stopped" } | {state: "loading"}
 ): ReplyPayload {
     const container = new ContainerBuilder()

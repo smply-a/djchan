@@ -2,9 +2,9 @@ import type { Track } from "@app/player"
 import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js"
 import { Color } from "../../constants.js"
 import type { ReplyPayload } from "../../types/index.js"
-import nowPlaying from "./nowPlaying.js"
+import { nowPlaying } from "./nowPlaying.js"
 
-export default function skipped(
+export function skipped(
     args : {state: "skipped", track: Track} | 
         {state: "loading"}
 ): ReplyPayload {

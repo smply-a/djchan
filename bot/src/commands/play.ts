@@ -1,9 +1,9 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import nowPlaying from "../components/replies/nowPlaying.js";
-import resumeReply from "../components/replies/resumReply.js";
-import songSearch from "../components/replies/songSearch.js";
+import { nowPlaying } from "../components/replies/nowPlaying.js";
+import { resumeReply } from "../components/replies/resumReply.js";
+import { songSearch } from "../components/replies/songSearch.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
     constructor() {

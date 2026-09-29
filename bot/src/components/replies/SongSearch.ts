@@ -4,7 +4,7 @@ import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 import { songInfo } from "../sections/songInfo.js";
 
-export default function searchSong(
+export function songSearch(
     args: {state: "searching", query: string}
     | {state: "found", track: Track}
     | {state: "queued", track: Track}

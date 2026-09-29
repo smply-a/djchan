@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "dev": "tsx --watch src/main.ts",
+    "dev": "pnpm --filter bot... build && tsx --watch src/main.ts",
     "build": "tsc"
   },
   "dependencies": {

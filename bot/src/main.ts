@@ -21,9 +21,12 @@ async function main() {
     if (!env.DISCORD_BOT_TOKEN) {
         throw new Error("bot token not set in env")
     }
+    if (env.MODE !== "dev" && env.MODE !== "prod") {
+        throw new Error('run mode not correctly set in env ("dev", "prod")')
+    }
     
     const client = new MyClient({
-        intents,
+        intents
     })
 
     await client.start({

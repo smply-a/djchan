@@ -4,7 +4,7 @@ import { Color } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
 
-export default function pauseReply(
+export function pauseReply(
     args : {state: "loading"} | {state: "paused", track: Track}
 ): ReplyPayload {
     const container = new ContainerBuilder()
