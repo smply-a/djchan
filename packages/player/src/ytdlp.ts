@@ -54,6 +54,7 @@ export const ytdlp = {
             console.log(`starting stream... ${url}`)
 
             return spawnYtdlp([
+                "--js-runtimes", "deno",
                 "--no-progress",
                 "-q",
                 "-x",

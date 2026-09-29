@@ -29,6 +29,7 @@ async function main() {
         intents
     })
 
+    // todo make mode change the bot token (so main and test bot dont interfer)
     await client.start({
         token: env.DISCORD_BOT_TOKEN,
         commands: [
