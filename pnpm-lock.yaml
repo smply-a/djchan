@@ -38,6 +38,10 @@ importers:
         version: 6.0.3
 
   packages/player:
+    dependencies:
+      '@app/shared':
+        specifier: workspace:*
+        version: link:../shared
     devDependencies:
       '@types/node':
         specifier: ^26.4.0

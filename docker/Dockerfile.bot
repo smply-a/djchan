@@ -10,7 +10,7 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile 
 RUN pnpm --filter bot... build
-RUN pnpm deploy --filter bot --prod /out
+RUN pnpm deploy --filter bot --prod --legacy /out
 
 
 

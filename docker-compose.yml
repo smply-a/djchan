@@ -7,4 +7,6 @@ services:
       dockerfile: docker/Dockerfile.bot
     env_file:
       - .env
+    environment:
+      - MODE=prod
     restart: unless-stopped

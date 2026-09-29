@@ -28,17 +28,32 @@ function isUrl(url: string) {
     }
 }
 
+function spawnYtdlp(args: string[]) {
+    if (process.env.MODE === "dev") {
+        return spawn("docker", [
+            "run",
+            "--rm",
+            "-i",
+            "ytdlp-test",
+            ...args
+        ]);
+    } else if (process.env.MODE === "prod") {
+        return spawn("yt-dlp", args)
+    }
+
+    throw new Error('env for MODE was not set correctly: "dev" or "prod"')
+}
+
+
+
+// YTDLP API
 // TODO DONT GET PLAYLIST WHEN LINK IS PLAYLIST
 export const ytdlp = {
     getWebmOpusStream: (url: string): ChildProcess => {
         if (isUrl(url) && validUrl(url)) {
             console.log(`starting stream... ${url}`)
-            
-            return spawn("docker", [
-                "run",
-                "--rm",
-                "-i",
-                "ytdlp-test",
+
+            return spawnYtdlp([
                 "--no-progress",
                 "-q",
                 "-x",
@@ -46,6 +61,7 @@ export const ytdlp = {
                 "-o", "-",
                 url,
             ]);
+
         } else {
             throw new Error(`Invalid YouTube URL: ${url}`);
         }
@@ -62,11 +78,7 @@ export const ytdlp = {
 
             console.log("searching...")
 
-            const ytdlp = spawn("docker", [
-                "run",
-                "--rm",
-                "-i",
-                "ytdlp-test",
+            const ytdlp = spawnYtdlp([
                 "--no-playlist",
                 "--dump-single-json",
                 query

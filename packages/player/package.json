@@ -2,11 +2,15 @@
   "name": "@app/player",
   "version": "1.0.0",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
   "packageManager": "pnpm@10.11.0",
   "scripts": {
     "test": "tsx --watch src/index.ts",
     "build": "tsc"
+  },
+  "dependencies": {
+    "@app/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",
