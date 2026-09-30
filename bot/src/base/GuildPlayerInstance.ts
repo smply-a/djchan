@@ -3,8 +3,8 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
 import { type ChildProcess } from "child_process";
 import type { VoiceBasedChannel } from "discord.js";
 import { EventEmitter } from "events";
-import { AlreadyPaused, AlreadyPlaying, NotPlaying, PublicError, VcJoinTimeOut } from "../types/PublicErrors.js";
 import { Logger } from "./Logger.js";
+import { AlreadyPaused, AlreadyPlaying, NotPlaying, PublicError, VcJoinTimeOut } from "./PublicErrors.js";
 
 interface PlayerState {
     queue: Track[]

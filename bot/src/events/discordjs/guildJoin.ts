@@ -1,6 +1,5 @@
 import { type Guild } from "discord.js";
 import { Event } from "../../base/Event.js";
-import { Color } from "../../constants.js";
 
 export class GuildJoin extends Event<"guildCreate"> {
     constructor() {
@@ -9,16 +8,13 @@ export class GuildJoin extends Event<"guildCreate"> {
 
     protected async execute(guild: Guild): Promise<void> {
         const {name, id} = guild
+        const bot = guild.members.me;
         this.logger.log(`added to guild: [${name}:${id}]`)
 
-        const botMember = guild.members.me;
-        if (botMember) {
-            const role = botMember.roles.botRole
+        const roleName = "DJ"
+    
+        // TODO: store created role id in db and check if in guild this role already exists, delete old create new
+        return    
 
-            await role?.setColors({
-                primaryColor: Color.bot,
-            })
-            await role?.setHoist(true)
-        }
     }
 }

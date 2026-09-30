@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags, TextDisplayBuilder, type Interaction } from "discord.js";
 import { Event } from "../../base/Event.js";
-import { InternalError, PublicError } from "../../types/PublicErrors.js";
+import { InternalError, PublicError } from "../../base/PublicErrors.js";
 
 // Handles all interactions
 export class InteractionCreate extends Event<"interactionCreate"> {
@@ -47,11 +47,6 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         }
     }
 
-    // TODO
-    private async handleUnhandeledError(error: unknown, interaction: Interaction) {
-
-    }
-
     private async handleSlashCommandError(error: unknown, interaction: ChatInputCommandInteraction) {
         // default error message
         let payload = new InternalError().getReply()
@@ -70,5 +65,10 @@ export class InteractionCreate extends Event<"interactionCreate"> {
 
         // delete message after 5 minutes
         this.deleteReply(5*60, interaction)
+    }
+
+    // TODO
+    private async handleUnhandeledError(error: unknown, interaction: Interaction) {
+
     }
 }

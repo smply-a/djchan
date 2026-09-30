@@ -1,44 +1,11 @@
-import { ContainerBuilder, MessageFlags, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder, type InteractionEditReplyOptions, type InteractionReplyOptions } from "discord.js";
-import { Color } from "../constants.js";
-import type { ReplyPayload } from "./index.js";
+import { internalErrorReply, invalidCommandErrorReply } from "../components/replies/error.js";
+import type { ReplyPayload } from "../types/index.js";
 
 export abstract class PublicError {
     public abstract message: string
     public abstract getReply(): ReplyPayload
 
     constructor() {}
-}
-
-export abstract class InvalidCommandError extends PublicError {
-    constructor(public invalidFields: {name: string, message: string}[]) {
-        super()
-    }
-
-    public getReply(): ReplyPayload {
-        const container = new ContainerBuilder()
-            .setAccentColor(Color.error)
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### ${this.message}`)
-            );
-
-        if (this.invalidFields.length > 0) {
-            container.addSeparatorComponents(
-                new SeparatorBuilder()
-                    .setDivider(true)
-                    .setSpacing(SeparatorSpacingSize.Small)
-            )
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    this.invalidFields.map(field => `\`${field.name}\`: ${field.message}`).join("\n")
-                )
-            )
-        }
-
-        return {
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-        }
-    }
 }
 
 
@@ -51,24 +18,24 @@ export class InternalError extends PublicError {
         super()
     }
 
-    // TODO maybe add thumbail etc
-    public getReply(): InteractionReplyOptions & InteractionEditReplyOptions {
-        const container = new ContainerBuilder()
-            .setAccentColor(Color.error)
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### ${this.message}`)
-            );
-
-        return {
-            components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-        }
+    public getReply(): ReplyPayload {
+        return internalErrorReply(this)
     }
 }
 
 
 
 // Invalid command usage errors
+export abstract class InvalidCommandError extends PublicError {
+    constructor(public invalidFields: {name: string, message: string}[]) {
+        super()
+    }
+
+    public getReply(): ReplyPayload {
+        return invalidCommandErrorReply(this)
+    }
+}
+
 export class MemberNotConnected extends InvalidCommandError {
     public message = "You must be connected to a vc."
     constructor() {
