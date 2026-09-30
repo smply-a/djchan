@@ -18,11 +18,14 @@ const intents = [
 
 async function main() {
     const env = loadEnv()
-    if (!env.DISCORD_BOT_TOKEN) {
-        throw new Error("bot token not set in env")
-    }
     if (env.MODE !== "dev" && env.MODE !== "prod") {
-        throw new Error('run mode not correctly set in env ("dev", "prod")')
+        throw new Error('run mode not set correctly in env (MODE="dev" or MODE="prod")')
+    }
+
+    const token = env.MODE === "prod" ? env.DISCORD_BOT_TOKEN : env.TEST_TOKEN
+
+    if (!token) {
+        throw new Error(`bot token not set in env (${env.MODE === "prod" ? "DISCORD_BOT_TOKEN" : "TEST_TOKEN"}="yourtoken")`)
     }
     
     const client = new MyClient({
@@ -31,7 +34,7 @@ async function main() {
 
     // todo make mode change the bot token (so main and test bot dont interfer)
     await client.start({
-        token: env.DISCORD_BOT_TOKEN,
+        token,
         commands: [
             Ping,
             Play,

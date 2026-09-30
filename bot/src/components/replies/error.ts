@@ -11,6 +11,8 @@ const baseContainer = (message: string) => new ContainerBuilder()
 
 const flags = MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral 
 
+
+
 export function internalErrorReply(error: InternalError): ReplyPayload {
     // TODO maybe add thumbail etc
     const container = baseContainer(error.message)
