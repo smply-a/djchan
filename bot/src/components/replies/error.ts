@@ -1,29 +1,38 @@
-import { ContainerBuilder, MessageFlags, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder } from "discord.js";
+import { ContainerBuilder, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder } from "discord.js";
 import type { InternalError, InvalidCommandError } from "../../base/PublicErrors.js";
-import { Color, Emoji } from "../../constants.js";
+import { Color, Emoji, ephemeralReplyFlags } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
-const baseContainer = (message: string) => new ContainerBuilder()
+
+
+export const ErrorReply = {
+    internal: internalErrorReply,
+    invalidCommand: invalidCommandErrorReply
+}
+
+
+
+function baseContainer (message: string) {
+    return new ContainerBuilder()
         .setAccentColor(Color.error)
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(`### ${Emoji.error} ${message}`)
         );
-
-const flags = MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral 
-
+}
 
 
-export function internalErrorReply(error: InternalError): ReplyPayload {
+
+function internalErrorReply(error: InternalError): ReplyPayload {
     // TODO maybe add thumbail etc
     const container = baseContainer(error.message)
 
     return {
         components: [container],
-        flags
+        flags: ephemeralReplyFlags
     }
 }
 
-export function invalidCommandErrorReply(error: InvalidCommandError): ReplyPayload {
+function invalidCommandErrorReply(error: InvalidCommandError): ReplyPayload {
         const container = baseContainer(error.message)
 
         if (error.invalidFields.length > 0) {
@@ -41,6 +50,6 @@ export function invalidCommandErrorReply(error: InvalidCommandError): ReplyPaylo
 
         return {
             components: [container],
-            flags
+            flags: ephemeralReplyFlags
         }
     }

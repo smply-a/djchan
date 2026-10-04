@@ -1,4 +1,4 @@
-import { internalErrorReply, invalidCommandErrorReply } from "../components/replies/error.js";
+import { ErrorReply } from "../components/replies/error.js";
 import type { ReplyPayload } from "../types/index.js";
 
 export abstract class PublicError {
@@ -19,7 +19,7 @@ export class InternalError extends PublicError {
     }
 
     public getReply(): ReplyPayload {
-        return internalErrorReply(this)
+        return ErrorReply.internal(this)
     }
 }
 
@@ -32,7 +32,7 @@ export abstract class InvalidCommandError extends PublicError {
     }
 
     public getReply(): ReplyPayload {
-        return invalidCommandErrorReply(this)
+        return ErrorReply.invalidCommand(this)
     }
 }
 

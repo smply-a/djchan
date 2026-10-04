@@ -1,6 +1,6 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import { pingReply } from "../components/replies/pingReply.js";
+import { pingReply } from "../components/replies/ping.js";
 
 export class Ping extends Command<ApplicationCommandType.ChatInput> {
     constructor() {

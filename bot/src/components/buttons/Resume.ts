@@ -1,23 +1,26 @@
 import { ButtonInteraction, ButtonStyle, ComponentType } from "discord.js";
-import { StaticButton } from "../../base/Button.js";
+import type { ComponentManager } from "../../base/ComponentManager.js";
+import { Button } from "../../base/Components.js";
+import { MusicReplies } from "../replies/music.js";
 
-export class PlayNow extends StaticButton{
-    constructor() {
-        super({
+export class Resume extends Button<null> {
+    constructor(handling: {manager: ComponentManager}) {
+        super({data: {
             type: ComponentType.Button,
             label: "resume",
-            customId: "resume",
             style: ButtonStyle.Primary,
-        })
+        }}, {...handling, context: null})
     }
 
     protected async execute(interaction: ButtonInteraction): Promise<void> {
-        interaction.reply("resuming")
 
-        // todo
+        // await interaction.deferReply()
 
+        const player = await interaction.client.players.getPlayerGuarded(interaction)
+
+        player.resume()
+        this.delete()
         
-        
-        interaction.editReply("succesfully resumed")
+        await interaction.update(MusicReplies.resume)
     }
 }

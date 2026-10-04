@@ -1,6 +1,6 @@
 import { ApplicationCommandType, ChatInputCommandInteraction, type CacheType } from "discord.js";
 import { Command } from "../base/Command.js";
-import { stopReply } from "../components/replies/stopReply.js";
+import { MusicReplies } from "../components/replies/music.js";
 
 export class Stop extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -12,10 +12,10 @@ export class Stop extends Command<ApplicationCommandType.ChatInput> {
     }
 
     protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-        await interaction.reply(stopReply({state: "loading"}))
+        await interaction.deferReply()
         const player = await interaction.client.players.getPlayerGuarded(interaction)
         
         player.stop()
-        await interaction.editReply(stopReply({state: "stopped"}))
+        await interaction.editReply(MusicReplies.stopped)
     }
 }

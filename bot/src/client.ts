@@ -1,5 +1,6 @@
 import { Client, Collection, type ClientOptions } from "discord.js";
 import type { Command } from "./base/Command.js";
+import { ComponentManager } from "./base/ComponentManager.js";
 import type { Event } from "./base/Event.js";
 import { Logger } from "./base/Logger.js";
 import { PlayerManager } from "./base/PlayerManager.js";
@@ -15,6 +16,7 @@ export default class BotClient extends Client {
         this.commands = new Collection()
         this.events = new Collection()
         this.players = new PlayerManager(this)
+        this.componentManager = new ComponentManager()
         // TODO button class wie gemni empfohlen
     }
 

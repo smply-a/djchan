@@ -1,5 +1,5 @@
 import { loadEnv } from '@app/shared'
-import { GatewayIntentBits } from "discord.js"
+import { ActivityType, GatewayIntentBits } from "discord.js"
 import MyClient from "./client.js"
 import { Pause } from './commands/pause.js'
 import { Ping } from "./commands/ping.js"
@@ -18,21 +18,28 @@ const intents = [
 
 async function main() {
     const env = loadEnv()
-    if (env.MODE !== "dev" && env.MODE !== "prod") {
+    const mode = env.MODE
+    if (mode !== "dev" && mode !== "prod") {
         throw new Error('run mode not set correctly in env (MODE="dev" or MODE="prod")')
     }
 
-    const token = env.MODE === "prod" ? env.DISCORD_BOT_TOKEN : env.TEST_TOKEN
+    const token = mode === "prod" ? env.DISCORD_BOT_TOKEN : env.TEST_TOKEN
 
     if (!token) {
-        throw new Error(`bot token not set in env (${env.MODE === "prod" ? "DISCORD_BOT_TOKEN" : "TEST_TOKEN"}="yourtoken")`)
+        throw new Error(`bot token not set in env (${mode === "prod" ? "DISCORD_BOT_TOKEN" : "TEST_TOKEN"}="yourtoken")`)
     }
     
     const client = new MyClient({
-        intents
+        intents,
+        presence: {
+            status: "online",
+            activities: [{
+                name: "streaming yt music", 
+                type: ActivityType.Custom
+            }]
+        }
     })
 
-    // todo make mode change the bot token (so main and test bot dont interfer)
     await client.start({
         token,
         commands: [
@@ -48,6 +55,21 @@ async function main() {
             GuildJoin
         ]
     })
+
+    // handle shutdown
+    process.on('SIGTERM', () => {
+        client.logger.log('Shutting down...');
+        
+        client.destroy(); 
+        process.exit(0); 
+    });
+
+    // handle strg c
+    process.on('SIGINT', () => {
+        client.logger.log('Shutting down...');
+        client.destroy();
+        process.exit(0);
+    });
 }
 
 await main()

@@ -9,6 +9,8 @@ export class InteractionCreate extends Event<"interactionCreate"> {
     }
 
     protected async execute(interaction: Interaction): Promise<void> {
+        const {client} = interaction
+
         // dont allow commands in dms
         if (!interaction.guild) {
             // TODO
@@ -24,6 +26,12 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         try {
             if (interaction.isChatInputCommand()) {
                 await this.handleSlashCommand(interaction)
+                return
+            }
+
+            if (interaction.isButton()) {
+                await client.componentManager.handleButton(interaction)
+                return
             }
         } catch (error) {
             this.logger.error(error)

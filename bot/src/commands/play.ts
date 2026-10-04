@@ -1,9 +1,7 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
-import { nowPlaying } from "../components/replies/nowPlaying.js";
-import { resumeReply } from "../components/replies/resumReply.js";
-import { songSearch } from "../components/replies/songSearch.js";
+import { MusicReplies } from "../components/replies/music.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -26,16 +24,18 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         // resume
         if (!query) {
-            await interaction.reply(resumeReply({state: "loading"}))
+            await interaction.deferReply()
             const player = await interaction.client.players.getPlayerGuarded(interaction) 
 
             const track = player.resume()
-            await interaction.editReply(resumeReply({state: "resumed", track}))
-            this.deleteReply(60, interaction)
+
+            await interaction.editReply(MusicReplies.resume)
+            this.deleteReply(5 * 60, interaction)
             return
         }
 
-        await interaction.reply(songSearch({state: "searching", query}))
+        // search
+        await interaction.reply(MusicReplies.request({state: "searching", query}))
 
         const [track, player] = await Promise.all([
             ytdlp.getTrack(query),
@@ -47,10 +47,10 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         const inQueue = player.addTrack(track)
 
         if (inQueue) {
-            await interaction.editReply(songSearch({state: "queued", track}))
+            await interaction.editReply(MusicReplies.queue(track))
             return
         }
 
-        await interaction.editReply(nowPlaying({state: "nowPlaying", track}))
+        await interaction.editReply(MusicReplies.start(track))
     }
 }

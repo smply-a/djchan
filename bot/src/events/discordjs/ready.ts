@@ -9,14 +9,5 @@ export class Ready extends Event<"clientReady"> {
     protected async execute(client: Client<true>) {
         const {username, id} = client.user
         this.logger.log(`logged in as [${username}]`)
-
-        // set presence
-        client.user.setPresence({
-            status: "online",
-            activities: [{
-                name: "streaming yt music", 
-                type: 4
-            }]
-        })
     }
 }
