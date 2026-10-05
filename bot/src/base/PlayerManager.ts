@@ -1,8 +1,8 @@
 import { ButtonInteraction, ChatInputCommandInteraction, MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js";
+import type { ReplyPayload } from "../types/index.js";
 import { GuildPlayerInstance } from "./GuildPlayerInstance.js";
 import { Logger } from "./Logger.js";
 import { CLientNotConnected, MemberNotConnected, MemberNotInSameChannel, OnlyInCachedGuild } from "./PublicErrors.js";
-import type { ReplyPayload } from "../types/index.js";
 
 type PlayerInteraction = ChatInputCommandInteraction | ButtonInteraction;
 
@@ -57,14 +57,14 @@ export class PlayerManager {
 
     // makes sure that the user has the privileges to acces the player
     public async getPlayerGuarded(interaction: PlayerInteraction) {
-        const {player, userVc} = this.getGuardParams(interaction)
+        const {player, userVc, guildId} = this.getGuardParams(interaction)
         
         if (!player) throw new CLientNotConnected()
 
         await player.ready()
         if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
 
-        return player
+        return {player, guildId}
     }
 
     // makes sure that the user has the privileges to acces the player
@@ -75,14 +75,16 @@ export class PlayerManager {
             await player.ready()
             if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
         
-            return player
+            return {player, guildId}
         }
 
         const newPlayer = this.createPlayer(guildId, userVc, interaction.channelId);
         await newPlayer.ready()
         
-        return newPlayer
+        return {player: newPlayer, guildId}
     }
+
+
 
     // get arguments for the guarded functions
     private getGuardParams(interaction: PlayerInteraction) {
@@ -97,17 +99,6 @@ export class PlayerManager {
             guildId: interaction.guild.id
         }
     }
-
-    private getOrCreate(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
-        let player = this.players.get(guildId)
-
-        if (!player) {
-            player = this.createPlayer(guildId, vc, textChannelId)
-        }
-
-        return player
-    }
-
 
     private get(guildId: string, textChannelId: string) {
         const player = this.players.get(guildId)
@@ -153,6 +144,10 @@ export class PlayerManager {
 
         player.on("playingNewTrack", (cause) => {
             const channelId = this.replyChannels.get(guildId)
+
+            // remove buttons from component handling when player queue updates
+            // todo invalidate components 
+
             if (cause === "command") return
 
             // only handle noninteraction events

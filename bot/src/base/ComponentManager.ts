@@ -1,12 +1,10 @@
-import type { ButtonInteraction } from "discord.js";
-import type { Button } from "./Components.js";
+import { MessageComponentInteraction, type RepliableInteraction } from "discord.js";
+import { Button, type MessageComponent } from "./Components.js";
 import { Logger } from "./Logger.js";
 import { ButtonExpired } from "./PublicErrors.js";
 
-// todo maybe make custom id like: guildid:buttonaction:uuid, so that you can remove buttons form the "outside"
-
 export class ComponentManager {
-    private buttons = new Map<string, {button: Button<unknown>, context: unknown, timeout: NodeJS.Timeout}>()
+    private components = new Map<string, {component: MessageComponent<any, unknown>, context: unknown, timeout: NodeJS.Timeout}>()
     private timeout: number
 
     #logger?: Logger
@@ -23,34 +21,39 @@ export class ComponentManager {
         this.timeout = options.timeout
     }
 
-    //todo make for any compoennt 
-    register<T>(button: Button<T>, context: T) {
+    //todo use guild id for invalidate components stuff
+    public register<T>(component: MessageComponent<any, T>, context: T, guildId: string) {
         //prevent memory leak
         const timeout = setTimeout(() => {
-            this.buttons.delete(button.customId)
+            this.components.delete(component.customId)
         }, this.timeout * 1000)
 
         timeout.unref()
 
-        this.buttons.set(button.customId, {button, context, timeout})
-        this.logger.log(`added component to handle: ${button.customId}`)
+        this.components.set(component.customId, {component, context, timeout})
+        this.logger.log(`added component to handle: ${component.customId}`)
     }
 
-    delete(button: Button<unknown>) {
-        const entry = this.buttons.get(button.customId);
+    public delete(component: MessageComponent<any, unknown>) {
+        const entry = this.components.get(component.customId);
         if (entry) {
             clearTimeout(entry.timeout);
-            this.buttons.delete(button.customId);
+            this.components.delete(component.customId);
         }
-        this.logger.log(`removed component to handle: ${button.customId}`)
+        this.logger.log(`removed component to handle: ${component.customId}`)
     }
 
-    async handleButton(interaction: ButtonInteraction) {
+    public async handleComponent(interaction: RepliableInteraction & MessageComponentInteraction) {
         const id = interaction.customId
 
-        const entry = this.buttons.get(id)
+        const entry = this.components.get(id)
         if (!entry) throw new ButtonExpired()
 
-        await entry.button.run(interaction, entry.context)
+        if (entry.component instanceof Button && interaction.isButton()) {
+            await entry.component.run(interaction, entry.context)
+            return
+        }
+
+        throw new Error("Could not handle component interaction")
     }
 }

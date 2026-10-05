@@ -14,10 +14,10 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
 
     protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         await interaction.deferReply()
-        const player = await interaction.client.players.getPlayerGuarded(interaction)
+        const {player, guildId} = await interaction.client.players.getPlayerGuarded(interaction)
 
         const track = player.pause()
-        await interaction.editReply(MusicReplies.pause(interaction.client.componentManager))
+        await interaction.editReply(MusicReplies.pause(interaction.client.componentManager, guildId))
 
         this.deleteReply(5*60, interaction)
     }

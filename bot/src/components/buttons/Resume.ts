@@ -4,21 +4,24 @@ import { Button } from "../../base/Components.js";
 import { MusicReplies } from "../replies/music.js";
 
 export class Resume extends Button<null> {
-    constructor(handling: {manager: ComponentManager}) {
-        super({data: {
-            label: "resume",
-            style: ButtonStyle.Secondary,
-        }}, {...handling, context: null})
+    constructor(handling: {manager: ComponentManager, guildId: string}) {
+        super({
+            data: {
+                label: "resume",
+                style: ButtonStyle.Secondary,
+            },
+            invalidateOn: "none"
+    }, {...handling, context: null})
     }
 
     protected async execute(interaction: ButtonInteraction): Promise<void> {
         await interaction.deferUpdate()
 
-        const player = await interaction.client.players.getPlayerGuarded(interaction)
+        const {player} = await interaction.client.players.getPlayerGuarded(interaction)
 
         player.resume()
-        this.delete()
         
+        this.delete()
         await interaction.editReply(MusicReplies.resume)
     }
 }

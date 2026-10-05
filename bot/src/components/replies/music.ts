@@ -15,9 +15,9 @@ import { songInfo } from "../sections/songInfo.js"
 export const MusicReplies = {
     nowPlaying: null,
     start: (track: Track) => playerTrackChangeReply({action: "start", track}),
-    queue: (track: Track, index: number, manager: ComponentManager) => playerTrackChangeReply({action: "queue", manager, track, index}),
+    queue: (track: Track, index: number, manager: ComponentManager, guildId: string) => playerTrackChangeReply({action: "queue", manager, track, index, guildId}),
     move: (track: Track, index: number) => playerTrackChangeReply({action: "move", track, index}),
-    pause: (manager: ComponentManager) => playerPlaybackReply({action: "pause", manager, }),
+    pause: (manager: ComponentManager, guildId: string) => playerPlaybackReply({action: "pause", manager, guildId}),
     resume: playerPlaybackReply({action: "resume"}),
     empty: queueEmpty(),
     skipped: (track: Track) => playerTrackChangeReply({action: "skip", track}),
@@ -70,7 +70,7 @@ export function songRequestReply(args: RequestArgs): ReplyPayload {
 type TrackChangeArgs = 
     {action: "start", track: Track} | 
     {action: "skip", track: Track} |
-    {action: "queue", track: Track, index: number, manager: ComponentManager} |
+    {action: "queue", track: Track, index: number, manager: ComponentManager, guildId: string} |
     {action: "move", track: Track, index: number}
 function playerTrackChangeReply(args: TrackChangeArgs
 ): ReplyPayload {
@@ -95,17 +95,19 @@ function playerTrackChangeReply(args: TrackChangeArgs
         }
 
         case "queue": {
-            const {manager, index} = args
-            const context = {track, index}
+            const {manager, index, guildId} = args
+            const context = {track}
+
+            let buttons = [new PlayNow({manager, context, guildId}).component]
+            if (index > 1) {
+                buttons = [new PlayNext({manager, context, guildId}).component, ...buttons]
+            }
 
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 `### ${Emoji.queued} queued at postion ${index}`
             ))
             .addSectionComponents(songInfo({track}))
-            .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                new PlayNow({manager, context}).component,
-                new PlayNext({manager, context}).component
-            ))
+            .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons))
             break
         }
 
@@ -131,7 +133,7 @@ function playerTrackChangeReply(args: TrackChangeArgs
 }
 
 type PlaybackArgs = 
-    {action: "pause", manager: ComponentManager} | 
+    {action: "pause", manager: ComponentManager, guildId: string} | 
     {action: "resume"} |
     {action: "stop"}
 function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
@@ -147,13 +149,13 @@ function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
             break
         }
         case "pause": {
-            const {manager} = args
+            const {manager, guildId} = args
 
             container.addSectionComponents(new SectionBuilder()
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                     `### ${Emoji.pause} paused`
                 ))
-                .setButtonAccessory(new Resume({manager}).component)
+                .setButtonAccessory(new Resume({manager, guildId}).component)
             )
             break
         }

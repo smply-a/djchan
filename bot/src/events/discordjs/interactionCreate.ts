@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, MessageFlags, TextDisplayBuilder, type Interaction } from "discord.js";
+import { ChatInputCommandInteraction, MessageComponentInteraction, MessageFlags, TextDisplayBuilder, type Interaction, type RepliableInteraction } from "discord.js";
 import { Event } from "../../base/Event.js";
 import { InternalError, PublicError } from "../../base/PublicErrors.js";
 
@@ -29,12 +29,11 @@ export class InteractionCreate extends Event<"interactionCreate"> {
                 return
             }
 
-            if (interaction.isButton()) {
-                await this.handleButton(interaction)
+            if (interaction.isMessageComponent()) {
+                await this.handleComponent(interaction)
                 return
             }
         } catch (error) {
-            this.logger.error(error)
             await this.handleUnhandeledError(error, interaction)
         }
     }
@@ -72,9 +71,9 @@ export class InteractionCreate extends Event<"interactionCreate"> {
         }
     }
 
-    private async handleButton(interaction: ButtonInteraction) {
+    private async handleComponent(interaction: RepliableInteraction & MessageComponentInteraction) {
         try {
-            await interaction.client.componentManager.handleButton(interaction)
+            await interaction.client.componentManager.handleComponent(interaction)
             
         } catch (error) {
             this.logger.error(error)
@@ -88,7 +87,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
 
             // send error message
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(payload)
+                await interaction.followUp(payload)
             }
             else {
                 await interaction.reply(payload)
@@ -101,6 +100,18 @@ export class InteractionCreate extends Event<"interactionCreate"> {
 
     // TODO
     private async handleUnhandeledError(error: unknown, interaction: Interaction) {
+        this.logger.error(error)
 
+        const payload = new InternalError().getReply()
+
+        // send error message
+        if (interaction.isRepliable()) {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply(payload)
+            }
+            else {
+                await interaction.reply(payload)
+            }
+        }
     }
 }

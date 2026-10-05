@@ -25,7 +25,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         // resume
         if (!query) {
             await interaction.deferReply()
-            const player = await interaction.client.players.getPlayerGuarded(interaction) 
+            const {player} = await interaction.client.players.getPlayerGuarded(interaction) 
 
             const track = player.resume()
 
@@ -37,7 +37,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         // search
         await interaction.reply(MusicReplies.request({state: "searching", query}))
 
-        const [track, player] = await Promise.all([
+        const [track, {player, guildId}] = await Promise.all([
             ytdlp.getTrack(query),
             interaction.client.players.getOrCreateGuarded(interaction)
         ])
@@ -48,7 +48,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
         if (result.inQueue) {
 
-            await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager))
+            await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager, guildId))
             return
         }
 

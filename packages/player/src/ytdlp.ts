@@ -1,4 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
+import { randomUUID } from "crypto";
 import type { Track } from "./index.js";
 
 function validUrl(yt_url: string): boolean {
@@ -105,6 +106,8 @@ export const ytdlp = {
                     const url = data.url ?? data.original_url;
 
                     const track: Track = {
+                        uuid: randomUUID(),
+
                         url,
                         title,
                         interpret: channel,

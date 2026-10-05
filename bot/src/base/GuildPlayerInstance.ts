@@ -148,6 +148,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.emit("disconnected")
     }
 
+    // TODO maybe error handling with index out of range stuff
     // index 0 mean playing now, 1 first in queue
     public addTrack(track: Track): {inQueue: false} | {inQueue: true, index: number} {
         const index = this.queue.push(track)
@@ -162,7 +163,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     // index 0 mean playing now, 1 first in queue
-    public insert(track: Track, index: number | "now") {
+    public insertTrack(track: Track, index: number | "now") {
         if (index === "now" || index === 0) {
             this.queue.splice(0, 0, track)
             this.playNextTrack("command")
@@ -172,8 +173,22 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.queue.splice(index - 1, 0, track)
     } 
 
+    // -1 means not found
+    public getTrackIndex(targetTrack: Track) {
+
+
+        for (const [index, track] of [this.song?.track, ...this.queue].entries()) {
+            if (track && targetTrack.uuid === track.uuid) {
+
+                return index
+            }
+        }
+
+        return -1
+    }
+
     // index 0 mean playing now, 1 first in queue
-    public delete(index: number) {
+    public deleteTrack(index: number) {
         this.queue.splice(index - 1, 1)
     }
 
