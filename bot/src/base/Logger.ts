@@ -8,10 +8,24 @@ export class Logger {
     constructor(private options: Options) {}
 
     log(...args: unknown[]) {
-        console.log(`[${this.options.type} : ${this.options.origin}] > ${args.join("\n> ")}`)
+        const time = this.timestamp();
+        console.log(`[${time}] [${this.options.type} : ${this.options.origin}] > ${args.join("\n> ")}`)
     }
 
     error(...args: unknown[]) {
-        console.log(`[Error] [${this.options.type} : ${this.options.origin}] > `, ...args)
+        const time = this.timestamp();
+        console.log(`[${time}] [Error] [${this.options.type} : ${this.options.origin}] > `, ...args)
+    }
+
+    private timestamp(): string {
+        return new Date().toLocaleString("de-DE", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false // Force 24-hour time
+        });
     }
 }

@@ -1,7 +1,6 @@
 import { MessageFlags } from "discord.js";
 
 export enum Color {
-    
     bot = 0xFFA3FD,
     error = 0xc33149,
 }
@@ -14,6 +13,12 @@ export enum Emoji {
     play = "<:play:1555182791220666381>",
     queued = "<:queued:1555181787469185165>",
     skipNext = "<:skip_next:1555184596482662484>",
+}
+
+export enum Image {
+    // error = "",
+    loading = "https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif?utm_source=de.wikipedia.org&utm_campaign=index&utm_content=original",
+
 }
 
 export const defaultReplyFlags = MessageFlags.IsComponentsV2

@@ -7,7 +7,8 @@ import type { ReplyPayload } from "../../types/index.js";
 
 export const ErrorReply = {
     internal: internalErrorReply,
-    invalidCommand: invalidCommandErrorReply
+    invalidCommand: invalidCommandErrorReply,
+    expiredComponent: expiredComponentReply,
 }
 
 
@@ -24,6 +25,15 @@ function baseContainer (message: string) {
 
 function internalErrorReply(error: InternalError): ReplyPayload {
     // TODO maybe add thumbail etc
+    const container = baseContainer(error.message)
+
+    return {
+        components: [container],
+        flags: ephemeralReplyFlags
+    }
+}
+
+function expiredComponentReply(error: InternalError): ReplyPayload {
     const container = baseContainer(error.message)
 
     return {

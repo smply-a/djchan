@@ -16,8 +16,9 @@ export default class BotClient extends Client {
         this.commands = new Collection()
         this.events = new Collection()
         this.players = new PlayerManager(this)
-        this.componentManager = new ComponentManager()
-        // TODO button class wie gemni empfohlen
+        this.componentManager = new ComponentManager({
+            timeout: 15 * 60 // 15 min
+        })
     }
 
     // call to start bot

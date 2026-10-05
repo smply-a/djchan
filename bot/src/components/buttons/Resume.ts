@@ -1,4 +1,4 @@
-import { ButtonInteraction, ButtonStyle, ComponentType } from "discord.js";
+import { ButtonInteraction, ButtonStyle } from "discord.js";
 import type { ComponentManager } from "../../base/ComponentManager.js";
 import { Button } from "../../base/Components.js";
 import { MusicReplies } from "../replies/music.js";
@@ -6,21 +6,19 @@ import { MusicReplies } from "../replies/music.js";
 export class Resume extends Button<null> {
     constructor(handling: {manager: ComponentManager}) {
         super({data: {
-            type: ComponentType.Button,
             label: "resume",
-            style: ButtonStyle.Primary,
+            style: ButtonStyle.Secondary,
         }}, {...handling, context: null})
     }
 
     protected async execute(interaction: ButtonInteraction): Promise<void> {
-
-        // await interaction.deferReply()
+        await interaction.deferUpdate()
 
         const player = await interaction.client.players.getPlayerGuarded(interaction)
 
         player.resume()
         this.delete()
         
-        await interaction.update(MusicReplies.resume)
+        await interaction.editReply(MusicReplies.resume)
     }
 }

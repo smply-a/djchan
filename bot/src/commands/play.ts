@@ -44,10 +44,11 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         
         // await interaction.editReply(SongSearch({type: "found", track}))
 
-        const inQueue = player.addTrack(track)
+        const result = player.addTrack(track)
 
-        if (inQueue) {
-            await interaction.editReply(MusicReplies.queue(track))
+        if (result.inQueue) {
+
+            await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager))
             return
         }
 

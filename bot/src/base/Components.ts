@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { ButtonBuilder, ButtonInteraction, type InteractionButtonComponentData } from "discord.js";
+import { ButtonBuilder, ButtonInteraction, ComponentType, type InteractionButtonComponentData } from "discord.js";
 import type { ComponentManager } from "./ComponentManager.js";
 import { Logger } from "./Logger.js";
 
@@ -19,7 +19,7 @@ export abstract class Button<Context> {
     private readonly data: InteractionButtonComponentData
 
     constructor(button: {
-        data: Omit<InteractionButtonComponentData, "customId">,
+        data: Omit<InteractionButtonComponentData, "customId" | "type">,
     }, handling: {
         manager: ComponentManager,
         context: Context
@@ -28,7 +28,8 @@ export abstract class Button<Context> {
 
         this.data = {
             ...button.data,
-            customId: uuid
+            customId: uuid,
+            type: ComponentType.Button
         }
 
         this.manager = handling.manager
@@ -40,7 +41,7 @@ export abstract class Button<Context> {
         return this.data.customId
     }
 
-    public get builder() {
+    public get component() {
         return new ButtonBuilder(this.data)
     }
 

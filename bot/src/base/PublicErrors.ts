@@ -25,6 +25,21 @@ export class InternalError extends PublicError {
 
 
 
+// Button no longer valid
+export class ButtonExpired extends PublicError {
+    public message = "This button has expired."
+
+    constructor() {
+        super()
+    }
+
+    public getReply(): ReplyPayload {
+        return ErrorReply.expiredComponent(this)
+    }
+}
+
+
+
 // Invalid command usage errors
 export abstract class InvalidCommandError extends PublicError {
     constructor(public invalidFields: {name: string, message: string}[]) {
@@ -35,6 +50,8 @@ export abstract class InvalidCommandError extends PublicError {
         return ErrorReply.invalidCommand(this)
     }
 }
+
+
 
 export class MemberNotConnected extends InvalidCommandError {
     public message = "You must be connected to a vc."

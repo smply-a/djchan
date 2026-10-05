@@ -88,6 +88,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     
         // register Player Events
 
+        // emit errors
         this.audioPlayer.on("error", (error) => {
             this.emit("error", error)
         })
@@ -147,21 +148,34 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.emit("disconnected")
     }
 
-    public addTrack(track: Track) {
-        this.queue.push(track)
+    // index 0 mean playing now, 1 first in queue
+    public addTrack(track: Track): {inQueue: false} | {inQueue: true, index: number} {
+        const index = this.queue.push(track)
 
         if (this.status === AudioPlayerStatus.Idle && !this.song) {
             // ! cause is "command"
             this.playNextTrack("command")
-            return false
+            return {inQueue: false}
         } else {
-            return true
+            return {inQueue: true, index}
         }
     }
 
-    public insert(track: Track, index: number) {
-        this.queue.splice(index, 0, track)
+    // index 0 mean playing now, 1 first in queue
+    public insert(track: Track, index: number | "now") {
+        if (index === "now" || index === 0) {
+            this.queue.splice(0, 0, track)
+            this.playNextTrack("command")
+            return
+        }
+
+        this.queue.splice(index - 1, 0, track)
     } 
+
+    // index 0 mean playing now, 1 first in queue
+    public delete(index: number) {
+        this.queue.splice(index - 1, 1)
+    }
 
     public skip() {
         // ! cause is "command"

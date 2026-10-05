@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, MessageFlags, TextDisplayBuilder, type Interaction } from "discord.js";
+import { ButtonInteraction, ChatInputCommandInteraction, MessageFlags, TextDisplayBuilder, type Interaction } from "discord.js";
 import { Event } from "../../base/Event.js";
 import { InternalError, PublicError } from "../../base/PublicErrors.js";
 
@@ -30,7 +30,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             }
 
             if (interaction.isButton()) {
-                await client.componentManager.handleButton(interaction)
+                await this.handleButton(interaction)
                 return
             }
         } catch (error) {
@@ -51,26 +51,50 @@ export class InteractionCreate extends Event<"interactionCreate"> {
 
         } catch (error) {
             command.logger.error(error)
-            await this.handleSlashCommandError(error, interaction)
+            
+            // default error message
+            let payload = new InternalError().getReply()
+
+            if (error instanceof PublicError) {
+                payload = error.getReply()
+            }
+
+            // send error message
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply(payload)
+            }
+            else {
+                await interaction.reply(payload)
+            }
+
+            // delete message after 5 minutes
+            this.deleteReply(5*60, interaction)
         }
     }
 
-    private async handleSlashCommandError(error: unknown, interaction: ChatInputCommandInteraction) {
-        // default error message
-        let payload = new InternalError().getReply()
+    private async handleButton(interaction: ButtonInteraction) {
+        try {
+            await interaction.client.componentManager.handleButton(interaction)
+            
+        } catch (error) {
+            this.logger.error(error)
 
-        if (error instanceof PublicError) {
-            payload = error.getReply()
-        }
+            // default error message
+            let payload = new InternalError().getReply()
 
-        // send error message
-        if (interaction.replied || interaction.deferred) {
-            await interaction.editReply(payload)
-        }
-        else {
-            await interaction.reply(payload)
-        }
+            if (error instanceof PublicError) {
+                payload = error.getReply()
+            }
 
+            // send error message
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply(payload)
+            }
+            else {
+                await interaction.reply(payload)
+            }
+        }
+        
         // delete message after 5 minutes
         this.deleteReply(5*60, interaction)
     }

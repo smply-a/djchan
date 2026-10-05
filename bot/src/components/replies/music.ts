@@ -1,10 +1,12 @@
 // todo centralized export for all music related replies
 
 import type { Track } from "@app/player"
-import { ActionRowBuilder, ContainerBuilder, MessageFlags, TextDisplayBuilder, type MessageActionRowComponentBuilder } from "discord.js"
+import { ActionRowBuilder, ContainerBuilder, MessageFlags, SectionBuilder, TextDisplayBuilder, type MessageActionRowComponentBuilder } from "discord.js"
 import type { ComponentManager } from "../../base/ComponentManager.js"
-import { Color, defaultReplyFlags } from "../../constants.js"
+import { Color, defaultReplyFlags, Emoji } from "../../constants.js"
 import type { ReplyPayload } from "../../types/index.js"
+import { PlayNext } from "../buttons/PlayNext.js"
+import { PlayNow } from "../buttons/PlayNow.js"
 import { Resume } from "../buttons/Resume.js"
 import { songInfo } from "../sections/songInfo.js"
 
@@ -13,7 +15,8 @@ import { songInfo } from "../sections/songInfo.js"
 export const MusicReplies = {
     nowPlaying: null,
     start: (track: Track) => playerTrackChangeReply({action: "start", track}),
-    queue: (track: Track) => playerTrackChangeReply({action: "queue", track}),
+    queue: (track: Track, index: number, manager: ComponentManager) => playerTrackChangeReply({action: "queue", manager, track, index}),
+    move: (track: Track, index: number) => playerTrackChangeReply({action: "move", track, index}),
     pause: (manager: ComponentManager) => playerPlaybackReply({action: "pause", manager, }),
     resume: playerPlaybackReply({action: "resume"}),
     empty: queueEmpty(),
@@ -24,9 +27,11 @@ export const MusicReplies = {
 
 
 
-function getBaseContainer() { return new ContainerBuilder()
-    .setAccentColor(Color.bot);
+function getBaseContainer() { 
+    return new ContainerBuilder()
+        .setAccentColor(Color.bot);
 }
+
 
 
 type RequestArgs = 
@@ -65,7 +70,8 @@ export function songRequestReply(args: RequestArgs): ReplyPayload {
 type TrackChangeArgs = 
     {action: "start", track: Track} | 
     {action: "skip", track: Track} |
-    {action: "queue", track: Track}
+    {action: "queue", track: Track, index: number, manager: ComponentManager} |
+    {action: "move", track: Track, index: number}
 function playerTrackChangeReply(args: TrackChangeArgs
 ): ReplyPayload {
     const container = getBaseContainer();
@@ -75,26 +81,48 @@ function playerTrackChangeReply(args: TrackChangeArgs
     switch (action) {
         case "start": {
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                "### now playing"
+                `### ${Emoji.play} now playing`
             ))
+            .addSectionComponents(songInfo({track}));
             break
         }
         case "skip": {
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                "### skipped to"
+                `### ${Emoji.skipNext} skipped to`
+            ))
+            .addSectionComponents(songInfo({track}));
+            break
+        }
+
+        case "queue": {
+            const {manager, index} = args
+            const context = {track, index}
+
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `### ${Emoji.queued} queued at postion ${index}`
+            ))
+            .addSectionComponents(songInfo({track}))
+            .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                new PlayNow({manager, context}).component,
+                new PlayNext({manager, context}).component
             ))
             break
         }
-        // TODO add queue move buttons, PLAY NOW button
-        case "queue": {
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent("### queued")
-            )
+
+        case "move": {
+            const {index} = args
+
+            const title = index > 0 ?
+                index > 1 ? `moved to position ${index}` : "playing next" 
+            : "moved to front"
+
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `### ${title}`
+            ))
+            .addSectionComponents(songInfo({track}))
             break
         }
     }
-
-    container.addSectionComponents(songInfo({track}));
 
     return {
         components: [container],
@@ -113,15 +141,20 @@ function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
     
     switch (action) {
         case "resume": {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent("### resumed"))
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `### ${Emoji.play} resumed`
+            ))
             break
         }
         case "pause": {
-            container
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent("### paused"))
-                .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>()
-                    .addComponents(new Resume({manager: args.manager}).builder)
-                )
+            const {manager} = args
+
+            container.addSectionComponents(new SectionBuilder()
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `### ${Emoji.pause} paused`
+                ))
+                .setButtonAccessory(new Resume({manager}).component)
+            )
             break
         }
         case "stop": {
