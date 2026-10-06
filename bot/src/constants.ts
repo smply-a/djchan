@@ -7,11 +7,14 @@ export enum Color {
 
 export enum Emoji {
     error = "<:error:1555184333088891010>",
-    loading = "<a:loadingbeta:1548781532590776420>",
+    loading = "<a:loading:1557030148472311901>",
+    arrow_right = "<:move:1556810450312630303>",
 
     pause = "<:pause:1555183306906009630>",
     play = "<:play:1555182791220666381>",
+    stop = "<:stop:1556806201747185825>",
     queued = "<:queued:1555181787469185165>",
+    queued_next = "<:queued_next:1556794793672319028>",
     skipNext = "<:skip_next:1555184596482662484>",
 }
 

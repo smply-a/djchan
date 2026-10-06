@@ -1,14 +1,14 @@
 // todo centralized export for all music related replies
 
 import type { Track } from "@app/player"
-import { ActionRowBuilder, ContainerBuilder, MessageFlags, SectionBuilder, TextDisplayBuilder, type MessageActionRowComponentBuilder } from "discord.js"
+import { getDurationString, viewString } from "@app/shared"
+import { ActionRowBuilder, ComponentType, ContainerBuilder, MessageFlags, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, type MessageActionRowComponentBuilder } from "discord.js"
 import type { ComponentManager } from "../../base/ComponentManager.js"
 import { Color, defaultReplyFlags, Emoji } from "../../constants.js"
 import type { ReplyPayload } from "../../types/index.js"
 import { PlayNext } from "../buttons/PlayNext.js"
 import { PlayNow } from "../buttons/PlayNow.js"
 import { Resume } from "../buttons/Resume.js"
-import { songInfo } from "../sections/songInfo.js"
 
 
 
@@ -16,7 +16,7 @@ export const MusicReplies = {
     nowPlaying: null,
     start: (track: Track) => playerTrackChangeReply({action: "start", track}),
     queue: (track: Track, index: number, manager: ComponentManager, guildId: string) => playerTrackChangeReply({action: "queue", manager, track, index, guildId}),
-    move: (track: Track, index: number) => playerTrackChangeReply({action: "move", track, index}),
+    move: (track: Track, oldIndex: number, newIndex: number) => playerTrackChangeReply({action: "move", track, oldIndex, newIndex}),
     pause: (manager: ComponentManager, guildId: string) => playerPlaybackReply({action: "pause", manager, guildId}),
     resume: playerPlaybackReply({action: "resume"}),
     empty: queueEmpty(),
@@ -32,6 +32,18 @@ function getBaseContainer() {
         .setAccentColor(Color.bot);
 }
 
+function songInfoInline(track: Track) {
+    return `[${track.title}](${track.url})`
+}
+
+function songInfo({track} : {track: Track}) {
+    return new SectionBuilder()
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `${`## [${track.title}](${track.url})`}\n` +
+            `by ${track.interpret}` + "   •   " + `${getDurationString(track.duration)}` + "   •   " + `${viewString(track.view_count)} views` 
+        ))
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
+}
 
 
 type RequestArgs = 
@@ -44,8 +56,7 @@ export function songRequestReply(args: RequestArgs): ReplyPayload {
         case "searching": {
             // todo set thumbnail with loading
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                "### searching\n" + 
-                `\`${args.query}\``
+                `### ${Emoji.loading} searching ` + `\`${args.query}\``
             ))
             break
         }
@@ -71,9 +82,8 @@ type TrackChangeArgs =
     {action: "start", track: Track} | 
     {action: "skip", track: Track} |
     {action: "queue", track: Track, index: number, manager: ComponentManager, guildId: string} |
-    {action: "move", track: Track, index: number}
-function playerTrackChangeReply(args: TrackChangeArgs
-): ReplyPayload {
+    {action: "move", track: Track, oldIndex: number, newIndex: number}
+function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
     const container = getBaseContainer();
 
     const {action, track} = args
@@ -88,9 +98,8 @@ function playerTrackChangeReply(args: TrackChangeArgs
         }
         case "skip": {
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${Emoji.skipNext} skipped to`
+                `### ${Emoji.skipNext} skipped to ` + songInfoInline(track)
             ))
-            .addSectionComponents(songInfo({track}));
             break
         }
 
@@ -104,24 +113,30 @@ function playerTrackChangeReply(args: TrackChangeArgs
             }
 
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${Emoji.queued} queued at postion ${index}`
+                `### ${Emoji.queued} postion \`${index}\``
             ))
             .addSectionComponents(songInfo({track}))
             .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons))
             break
         }
 
+        // todo make old index -> new index
         case "move": {
-            const {index} = args
+            const {oldIndex, newIndex} = args
 
-            const title = index > 0 ?
-                index > 1 ? `moved to position ${index}` : "playing next" 
-            : "moved to front"
+            const isNext = newIndex === 1;
+            const isPlaying = newIndex === 0;
 
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${title}`
+            const emoji = isPlaying ? Emoji.play : isNext ? Emoji.queued_next : Emoji.queued;
+            const newIndexString = isPlaying ? "now playing" : isNext ? "next" : newIndex;
+
+            container.addSectionComponents(new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `### ${emoji} position \`${oldIndex}\` ${Emoji.arrow_right} ${newIndexString} \n` +
+                songInfoInline(track)
             ))
-            .addSectionComponents(songInfo({track}))
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
+        )
+
             break
         }
     }
@@ -143,24 +158,32 @@ function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
     
     switch (action) {
         case "resume": {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${Emoji.play} resumed`
-            ))
+            container.addTextDisplayComponents({
+                type: ComponentType.TextDisplay,
+                content: `### ${Emoji.play} resumed`
+            })
             break
         }
+
         case "pause": {
             const {manager, guildId} = args
 
-            container.addSectionComponents(new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `### ${Emoji.pause} paused`
-                ))
-                .setButtonAccessory(new Resume({manager, guildId}).component)
-            )
+            container.addSectionComponents({
+                type: ComponentType.Section,
+                components: [{
+                    type: ComponentType.TextDisplay,
+                    content: `### ${Emoji.pause} paused`
+                }],
+                accessory: new Resume({manager, guildId}).component.toJSON() 
+            })
             break
         }
+
         case "stop": {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent("### stopped"))
+            container.addTextDisplayComponents({
+                type: ComponentType.TextDisplay,
+                content: `### ${Emoji.stop} stopped`
+            })
             break
         }
     }

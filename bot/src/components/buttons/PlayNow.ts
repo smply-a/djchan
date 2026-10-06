@@ -3,6 +3,7 @@ import { ButtonInteraction, ButtonStyle } from "discord.js";
 import type { ComponentManager } from "../../base/ComponentManager.js";
 import { Button } from "../../base/Components.js";
 import { ButtonExpired } from "../../base/PublicErrors.js";
+import { Emoji } from "../../constants.js";
 import { MusicReplies } from "../replies/music.js";
 
 interface Context {
@@ -14,6 +15,7 @@ export class PlayNow extends Button<Context> {
         super({
             data: {
                 label: "play now",
+                emoji: Emoji.play,
                 style: ButtonStyle.Secondary,
             },
             invalidateOn: "none"
@@ -36,6 +38,6 @@ export class PlayNow extends Button<Context> {
         player.insertTrack(track, 0)
 
         this.delete()
-        await interaction.editReply(MusicReplies.move(track, 0))
+        await interaction.followUp(MusicReplies.move(track, index, 0))
     }
 }
