@@ -13,7 +13,7 @@ interface Data {
 }
 
 export class Skip extends Button<Data> {
-    constructor(private once: boolean, context: {manager: ComponentManager, data: Data}) {
+    constructor(private mode: "bindToThisTrack" | "normal", context: {manager: ComponentManager, data: Data}) {
         super({
             data: {
                 style: ButtonStyle.Secondary,
@@ -28,7 +28,7 @@ export class Skip extends Button<Data> {
 
         const {player, guildId} = await interaction.client.players.getPlayerGuarded(interaction)
 
-        if (this.once) {
+        if (this.mode == "bindToThisTrack") {
             this.invalidate()
             if (player.state.queue[0] && player.state.queue[0].uuid !== nextTrack.uuid) {
                 throw new ButtonExpired()
@@ -43,11 +43,13 @@ export class Skip extends Button<Data> {
                 return 
             }
             
-            await interaction.editReply(MusicReplies.empty)
+            const reply = await interaction.editReply(MusicReplies.empty)
+            this.deleteReply(5*60, reply)
         
         } catch (error) {
             if (error instanceof TrackError) {
-                await interaction.editReply(MusicReplies.trackError(error.track, error.nextTrack, interaction.client.componentManager))
+                const reply = await interaction.editReply(MusicReplies.trackError(error, interaction.client.componentManager))
+                this.deleteReply(5*60, reply)
                 return
             }
 

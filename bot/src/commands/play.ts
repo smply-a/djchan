@@ -30,8 +30,8 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
 
             const track = player.resume()
 
-            await interaction.editReply(MusicReplies.resume)
-            this.deleteReply(5 * 60, interaction)
+            const reply = await interaction.editReply(MusicReplies.resume)
+            this.deleteReply(5 * 60, reply)
             return
         }
 
@@ -43,22 +43,21 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
             interaction.client.players.getOrCreateGuarded(interaction)
         ])
         
-        // result
+        // show search result
         await interaction.editReply(MusicReplies.request({state: "result", track}))
 
         try {
             const result = await player.addTrack(track)
 
-            console.log(result.inQueue)
             if (result.inQueue) {
-                await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager))
+                await interaction.editReply(MusicReplies.queued(track, result.index, interaction.client.componentManager))
             } else {
                 await interaction.editReply(MusicReplies.start(track))
             }
         
         } catch (error) {
             if (error instanceof TrackError) {
-                await interaction.editReply(MusicReplies.trackError(error.track, error.nextTrack, interaction.client.componentManager))
+                await interaction.editReply(MusicReplies.trackError(error, interaction.client.componentManager))
                 return
             }
 

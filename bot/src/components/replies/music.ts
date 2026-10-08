@@ -2,8 +2,10 @@
 
 import type { Track } from "@app/player"
 import { getDurationString, viewString } from "@app/shared"
-import { ActionRowBuilder, ComponentType, ContainerBuilder, MessageFlags, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, type MessageActionRowComponentBuilder } from "discord.js"
+import { AudioPlayerStatus } from "@discordjs/voice"
+import { ActionRowBuilder, ComponentType, ContainerBuilder, SectionBuilder, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder, ThumbnailBuilder, type MessageActionRowComponentBuilder } from "discord.js"
 import type { ComponentManager } from "../../base/ComponentManager.js"
+import type { PlayerState, TrackError } from "../../base/GuildPlayerInstance.js"
 import { Color, defaultReplyFlags, Emoji } from "../../constants.js"
 import type { ReplyPayload } from "../../types/index.js"
 import { PlayNext } from "../buttons/PlayNext.js"
@@ -16,15 +18,16 @@ import { Skip } from "../buttons/Skip.js"
 export const MusicReplies = {
     nowPlaying: null,
     start: (track: Track) => playerTrackChangeReply({action: "start", track}),
-    queue: (track: Track, index: number, componentManager: ComponentManager) => playerTrackChangeReply({action: "queue", track, index, manager: componentManager}),
+    queued: (track: Track, index: number, componentManager: ComponentManager) => playerTrackChangeReply({action: "queue", track, index, manager: componentManager}),
     move: (track: Track, oldIndex: number, newIndex: number) => playerTrackChangeReply({action: "move", track, oldIndex, newIndex}),
     pause: (componentManager: ComponentManager) => playerPlaybackReply({action: "pause", manager: componentManager}),
     resume: playerPlaybackReply({action: "resume"}),
+    queue: queueReply,
     empty: queueEmpty(),
     skipped: (track: Track) => playerTrackChangeReply({action: "skip", track}),
     stopped: playerPlaybackReply({action: "stop"}),
     request: songRequestReply,
-    trackError: (track: Track, nextTrack: Track | null, componentManager: ComponentManager) => TrackErrorReply({track, nextTrack}, componentManager)
+    trackError: (error: TrackError, componentManager: ComponentManager) => TrackErrorReply(error, componentManager)
 }
 
 
@@ -41,7 +44,7 @@ function songInfoInline(track: Track) {
 function songInfo(track : Track) {
     return new SectionBuilder()
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `${`## [${track.title}](${track.url})`}\n` +
+            `## [${track.title}](${track.url})\n` +
             `by ${track.interpret}` + "   •   " + `${getDurationString(track.duration)}` + "   •   " + `${viewString(track.view_count)} views` 
         ))
         .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
@@ -122,7 +125,6 @@ function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
             break
         }
 
-        // todo make old index -> new index
         case "move": {
             const {oldIndex, newIndex} = args
 
@@ -132,12 +134,10 @@ function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
             const emoji = isPlaying ? Emoji.play : isNext ? Emoji.queued_next : Emoji.queued;
             const newIndexString = isPlaying ? "now playing" : isNext ? "next" : newIndex;
 
-            container.addSectionComponents(new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 `### ${emoji} position \`${oldIndex}\` ${Emoji.arrow_right} \`${newIndexString}\`\n` +
                 songInfoInline(track)
             ))
-            .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
-        )
 
             break
         }
@@ -192,11 +192,34 @@ function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
 
     return {
         components: [container],
-        flags: MessageFlags.IsComponentsV2
+        flags: defaultReplyFlags
     }
 }
 
+function queueReply({queue, track, status}: PlayerState): ReplyPayload {
+    const state = 
+        status === AudioPlayerStatus.Buffering ? "buffering" :
+        status === AudioPlayerStatus.Playing ? "playing" :
+        status === AudioPlayerStatus.Idle ? "idle" :
+        "paused"
 
+    
+    const container = getBaseContainer()
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `### ${Emoji.queued} queue\n` +
+            `currently: \`${state}\` ${track ? `[${track.title}](${track.url})`: ""}\n`
+        ))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(SeparatorSpacingSize.Small))
+        
+    if (queue.length > 0) container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            queue.map((track, index) => `${index+1}. [${track.title}](${track.url})`).join("\n")
+        ))
+
+    return {
+        components: [container],
+        flags: defaultReplyFlags
+    }
+}
 
 function queueEmpty(): ReplyPayload {
     const container = getBaseContainer()
@@ -204,11 +227,13 @@ function queueEmpty(): ReplyPayload {
 
     return {
         components: [container],
-        flags: MessageFlags.IsComponentsV2
+        flags: defaultReplyFlags
     }
 }
 
-function TrackErrorReply({track, nextTrack}: {track: Track, nextTrack: Track | null}, componentManager: ComponentManager): ReplyPayload {
+function TrackErrorReply(error: TrackError, componentManager: ComponentManager): ReplyPayload {
+    const {track, nextTrack} = error
+
     const container = new ContainerBuilder()
         .setAccentColor(Color.error)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -218,12 +243,12 @@ function TrackErrorReply({track, nextTrack}: {track: Track, nextTrack: Track | n
     
     if (nextTrack) {
         container.addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>()
-            .addComponents(new Skip(true, {manager: componentManager, data: {track, nextTrack}}).component)
+            .addComponents(new Skip("bindToThisTrack", {manager: componentManager, data: {track, nextTrack}}).component)
         )
     }
 
     return {
         components: [container],
-        flags: MessageFlags.IsComponentsV2
+        flags: defaultReplyFlags
     }
 }

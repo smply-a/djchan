@@ -59,15 +59,12 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             }
 
             // send error message
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(payload)
-            }
-            else {
+            const reply = interaction.replied || interaction.deferred ? 
+                await interaction.followUp(payload) :
                 await interaction.reply(payload)
-            }
 
             // delete message after 5 minutes
-            this.deleteReply(5*60, interaction)
+            this.deleteReply(5*60, reply)
         }
     }
 
@@ -86,15 +83,14 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             }
 
             // send error message
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(payload)
-            }
-            else {
+            const reply = interaction.replied || interaction.deferred ? 
+                await interaction.followUp(payload) :
                 await interaction.reply(payload)
-            }
+            
+
 
             // delete message after 5 minutes
-            this.deleteReply(5*60, interaction)
+            this.deleteReply(5*60, reply)
         }
     }
 

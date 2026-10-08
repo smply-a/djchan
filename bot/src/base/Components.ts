@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { ButtonBuilder, ButtonInteraction, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ComponentType, MentionableSelectMenuBuilder, MentionableSelectMenuInteraction, RoleSelectMenuBuilder, RoleSelectMenuInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, UserSelectMenuBuilder, UserSelectMenuInteraction, type ChannelSelectMenuComponentData, type InteractionButtonComponentData, type MentionableSelectMenuComponentData, type RoleSelectMenuComponentData, type StringSelectMenuComponentData, type UserSelectMenuComponentData } from "discord.js";
+import { ButtonBuilder, ButtonInteraction, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ComponentType, InteractionResponse, MentionableSelectMenuBuilder, MentionableSelectMenuInteraction, Message, RoleSelectMenuBuilder, RoleSelectMenuInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, UserSelectMenuBuilder, UserSelectMenuInteraction, type ChannelSelectMenuComponentData, type InteractionButtonComponentData, type MentionableSelectMenuComponentData, type RoleSelectMenuComponentData, type StringSelectMenuComponentData, type UserSelectMenuComponentData } from "discord.js";
 import type { ComponentManager } from "./ComponentManager.js";
 import { Logger } from "./Logger.js";
 
@@ -55,6 +55,12 @@ export abstract class MessageComponent<T extends keyof ComponentMap, Data> {
 
     public invalidate() {
         this.manager.delete(this);
+    }
+
+    protected async deleteReply(seconds: number, message: Message | InteractionResponse) {
+        setTimeout(() => {
+            void message.delete().catch(()=>{})
+        }, seconds * 1000)
     }
 }
 

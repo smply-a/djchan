@@ -30,7 +30,7 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
         
         } catch (err) {
             if (err instanceof TrackError) {
-                await interaction.editReply(MusicReplies.trackError(err.track, err.nextTrack, interaction.client.componentManager))
+                await interaction.editReply(MusicReplies.trackError(err, interaction.client.componentManager))
                 return
             }
             

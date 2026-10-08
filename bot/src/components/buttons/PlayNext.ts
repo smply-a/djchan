@@ -34,6 +34,8 @@ export class PlayNext extends Button<Track> {
         const result = await player.insertTrack(track, 1)
         
         this.invalidate()
-        await interaction.followUp(MusicReplies.move(track, index, 1))
+        const reply = await interaction.followUp(MusicReplies.move(track, index, 1))
+
+        this.deleteReply(5*60, reply)
     }
 }

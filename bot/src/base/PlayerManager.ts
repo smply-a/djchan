@@ -78,23 +78,24 @@ export class PlayerManager {
             return {player, guildId}
         }
 
-        const newPlayer = this.createPlayer(guildId, userVc, interaction.channelId);
-        await newPlayer.ready()
+        const newPlayer = await this.createPlayer(guildId, userVc, interaction.channelId);
         
         return {player: newPlayer, guildId}
     }
 
 
 
-    // get arguments for the guarded functions
+    // get arguments for the public guarded functions
     private getGuardParams(interaction: PlayerInteraction) {
         if (!interaction.inCachedGuild()) throw new OnlyInCachedGuild()
         
         const userVc = interaction.member.voice.channel;
         if (!userVc) throw new MemberNotConnected()
 
+        const player = this.get(interaction.guild.id, interaction.channelId)
+
         return {
-            player: this.get(interaction.guild.id, interaction.channelId),
+            player,
             userVc,
             guildId: interaction.guild.id
         }
@@ -123,8 +124,8 @@ export class PlayerManager {
     }
 
     // todo events
-    private createPlayer(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
-        const player = new GuildPlayerInstance(guildId, vc)
+    private async createPlayer(guildId: string, vc: VoiceBasedChannel, textChannelId: string) {
+        const player = await GuildPlayerInstance.create(guildId, vc)
         this.players.set(guildId, player)
         this.setReplyChannel(guildId, textChannelId)
         this.logger.log(`Added player for guild: [${guildId}]`)

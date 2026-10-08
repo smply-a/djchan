@@ -1,4 +1,4 @@
-import type { Awaitable, ClientEvents, RepliableInteraction } from "discord.js";
+import type { Awaitable, ClientEvents, InteractionResponse, Message } from "discord.js";
 import { Logger } from "./Logger.js";
 
 export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
@@ -23,9 +23,9 @@ export abstract class Event<T extends keyof ClientEvents = keyof ClientEvents> {
         }
     }
 
-    protected async deleteReply(seconds: number, interaction: RepliableInteraction) {
+    protected async deleteReply(seconds: number, message: Message | InteractionResponse) {
         setTimeout(() => {
-            void interaction.deleteReply().catch(()=>{})
+            void message.delete().catch(()=>{})
         }, seconds * 1000)
     }
 }

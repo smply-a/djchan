@@ -4,6 +4,7 @@ import MyClient from "./client.js"
 import { Pause } from './commands/pause.js'
 import { Ping } from "./commands/ping.js"
 import { Play } from './commands/play.js'
+import { Queue } from './commands/queue.js'
 import { Skip } from './commands/skip.js'
 import { Stop } from './commands/stop.js'
 import { GuildJoin, InteractionCreate, Ready } from "./events/discordjs/index.js"
@@ -47,7 +48,8 @@ async function main() {
             Play,
             Pause,
             Skip,
-            Stop
+            Stop, 
+            Queue
         ],
         events: [
             Ready,

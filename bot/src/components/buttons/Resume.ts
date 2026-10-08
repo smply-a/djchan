@@ -23,6 +23,8 @@ export class Resume extends Button<null> {
         player.resume()
         
         this.invalidate()
-        await interaction.editReply(MusicReplies.resume)
+        const reply = await interaction.editReply(MusicReplies.resume)
+
+        this.deleteReply(5*60, reply)
     }
 }

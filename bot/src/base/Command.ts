@@ -1,4 +1,4 @@
-import { type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
+import { InteractionResponse, Message, type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
 import { Logger } from "./Logger.js";
 
 type CommandTypeMap = {
@@ -50,11 +50,9 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     }
 
     // utils
-    protected async deleteReply(seconds: number, interaction: ChatInputCommandInteraction) {
+    protected async deleteReply(seconds: number, message: Message | InteractionResponse) {
         setTimeout(() => {
-            void interaction.deleteReply().catch(()=>{})
+            void message.delete().catch(()=>{})
         }, seconds * 1000)
     }
-
-    
 }

@@ -34,11 +34,14 @@ export class PlayNow extends Button<Track> {
         player.deleteTrack(index)
         try {
             await player.insertTrack(track, "now")
-            await interaction.followUp(MusicReplies.move(track, index, 0))
+            const reply = await interaction.followUp(MusicReplies.move(track, index, 0))
+
+            this.deleteReply(5*60, reply)
         
         } catch (error) {
             if (error instanceof TrackError) {
-                await interaction.editReply(MusicReplies.trackError(error.track,error.nextTrack, interaction.client.componentManager))
+                const reply = await interaction.editReply(MusicReplies.trackError(error, interaction.client.componentManager))
+                this.deleteReply(5*60, reply)
                 return
             }
 

@@ -6,7 +6,7 @@ import { EventEmitter } from "events";
 import { Logger } from "./Logger.js";
 import { AlreadyPaused, AlreadyPlaying, NotPlaying, PublicError, VcJoinTimeOut } from "./PublicErrors.js";
 
-interface PlayerState {
+export interface PlayerState {
     queue: Track[]
     track: Track | null,
     status: AudioPlayerStatus
@@ -35,10 +35,9 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         channelId: string
     }
 
-    // mutex on join
+    // mutex
     #ready: Promise<void | PublicError>
-
-    #changingTrack: Promise<void> | null = null
+    #mutex: Promise<void> | null = null
 
     #logger?: Logger
     private get logger(): Logger {
@@ -48,7 +47,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         })
     }
 
-    public static async asyncCreate(guildId: string, vc: VoiceBasedChannel) {
+    public static async create(guildId: string, vc: VoiceBasedChannel) {
         const player = new this(guildId, vc)
         await player.ready()
         return player
@@ -60,7 +59,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         if (error) throw error
     }
     
-    public constructor(guildId: string, vc: VoiceBasedChannel) {
+    private constructor(guildId: string, vc: VoiceBasedChannel) {
         super()
         this.guildId = guildId
         this.audioPlayer = createAudioPlayer()
@@ -97,7 +96,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
             this.tryKillStream()
 
             if (this.queue.length > 0) {
-                if (this.#changingTrack) {
+                if (this.#mutex) {
                     return
                 }
 
@@ -130,6 +129,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     }
 
     public get state(): PlayerState {
+        this.awaitMutex()
         return {
             track: this.song?.track ?? null,
             queue: [...this.queue], // return copy not reference
@@ -156,7 +156,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
         // mutex so that not multiple commands enter the play now state
         // play immideately if idle and empty
-        if (this.status === AudioPlayerStatus.Idle && !this.song && !this.#changingTrack) {
+        if (this.status === AudioPlayerStatus.Idle && !this.song && !this.#mutex) {
             await this.playNextTrack();
             return {inQueue: false};
         }
@@ -248,14 +248,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     } 
 
     private async playNextTrack() {
-        await this.awaitChangeTrack()
-
-        // mutex lock
-        let releaseLock!: () => void
-        this.#changingTrack = new Promise((resolve) => releaseLock = () => {
-            this.#changingTrack = null
-            resolve()
-        })
+        const unlock = await this.getMutexLock()
 
         this.tryKillStream(this.song?.stream)
 
@@ -264,7 +257,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
         // if no song, do nothing
         if (!track) {
-            releaseLock()
+            unlock()
             return 
         }
 
@@ -272,8 +265,6 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
         try {
             stream = ytApi.getWebmOpusStream(track.url)
-
-            stream.stderr?.on("data", (data) => this.logger.log("yt-dlp:", data.toString()));
 
             stream.on("close", () => {
                 this.logger.log("closed yt-dlp stream process")
@@ -295,6 +286,10 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                     reject(error)
                 })
                 stream?.once("error", (error) => {
+                    clearTimeout(timeout);
+                    reject(error)
+                })
+                stream?.stderr?.on("error", (error) => {
                     clearTimeout(timeout);
                     reject(error)
                 })
@@ -321,7 +316,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
             throw new TrackError(track, this.queue[0])
         
         } finally {
-            releaseLock()
+            unlock()
         } 
     }
 
@@ -332,10 +327,22 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.audioPlayer.stop(true)
     }
 
-    private async awaitChangeTrack() {
-        while (this.#changingTrack) {
-            await this.#changingTrack
+    private async awaitMutex() {
+        while (this.#mutex) {
+            await this.#mutex
         }
+    }
+
+    private async getMutexLock() {
+        await this.awaitMutex()
+
+        let releaseLock!: () => void
+        this.#mutex = new Promise((resolve) => releaseLock = () => {
+            this.#mutex = null
+            resolve()
+        })
+
+        return releaseLock
     }
 }
 
