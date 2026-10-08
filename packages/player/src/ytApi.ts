@@ -2,7 +2,7 @@ import { ChildProcess, spawn } from "child_process";
 import { randomUUID } from "crypto";
 import type { Track } from "./index.js";
 
-function validUrl(yt_url: string): boolean {
+function validYtUrl(yt_url: string): boolean {
     try {
         const url = new URL(yt_url);
         const hostname = url.hostname.toLowerCase();
@@ -51,7 +51,7 @@ function spawnYtdlp(args: string[]) {
 // TODO DONT GET PLAYLIST WHEN LINK IS PLAYLIST
 export const ytApi = {
     getWebmOpusStream: (url: string): ChildProcess => {
-        if (isUrl(url) && validUrl(url)) {
+        if (isUrl(url) && validYtUrl(url)) {
             console.log(`starting stream... ${url}`)
 
             return spawnYtdlp([
@@ -73,7 +73,7 @@ export const ytApi = {
         return new Promise((resolve, reject) => {
 
             const isurl = isUrl(urlOrName)
-            if(isurl && !validUrl(urlOrName)) {
+            if(isurl && !validYtUrl(urlOrName)) {
                 throw new Error("link is not from youtube")
             }
             const query = isurl ? urlOrName : `ytsearch1:${urlOrName}`;
@@ -83,6 +83,7 @@ export const ytApi = {
             const ytdlp = spawnYtdlp([
                 "--no-playlist",
                 "--dump-single-json",
+                "--no-js-runtimes",
                 query
             ]);
 

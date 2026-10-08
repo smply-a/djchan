@@ -9,9 +9,7 @@ export const loadEnv = () => {
 
     const result = dotenv.config({ path: fullPath })
 
-    if (result.error && !process.env.DISCORD_TOKEN) {
-        console.warn(`[Env] sysvars missing`);
-    } else if (!result.error) {
+    if (!result.error) {
         console.log(`[Env] loaded .env file`);
     } else {
         console.log(`[Env] syscvrs (Docker) used`);

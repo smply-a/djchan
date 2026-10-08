@@ -1,4 +1,4 @@
-import { ytApi } from "./ytdlp.js"
+import { ytApi } from "./ytApi.js"
 
 export { ytApi }
 
