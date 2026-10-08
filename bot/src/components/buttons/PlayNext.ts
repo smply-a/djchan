@@ -6,23 +6,18 @@ import { ButtonExpired } from "../../base/PublicErrors.js";
 import { Emoji } from "../../constants.js";
 import { MusicReplies } from "../replies/music.js";
 
-interface Context {
-    track: Track
-}
-
-export class PlayNext extends Button<Context> {
-    constructor(handling: {manager: ComponentManager, context: Context, guildId: string}) {
+export class PlayNext extends Button<Track> {
+    constructor(context: {manager: ComponentManager, data: Track}) {
         super({
             data: {
                 label: "play next",
                 emoji: Emoji.queued_next,
                 style: ButtonStyle.Secondary,
             },
-            invalidateOn: "none"
-    }, handling)
+    }, context)
     }
 
-    protected async execute(interaction: ButtonInteraction, {track}: Context): Promise<void> {
+    protected async execute(interaction: ButtonInteraction, track: Track): Promise<void> {
         await interaction.deferUpdate()
 
         const {player} = await interaction.client.players.getPlayerGuarded(interaction)
@@ -31,14 +26,14 @@ export class PlayNext extends Button<Context> {
 
         // invalidate themself
         if (index <= 1) {
-            this.delete()
             throw new ButtonExpired()
         }
 
         player.deleteTrack(index)
-        player.insertTrack(track, 1)
+        // ! safe because it is not played so cant fail
+        const result = await player.insertTrack(track, 1)
         
-        this.delete()
+        this.invalidate()
         await interaction.followUp(MusicReplies.move(track, index, 1))
     }
 }

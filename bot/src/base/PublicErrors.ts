@@ -27,7 +27,7 @@ export class InternalError extends PublicError {
 
 // Button no longer valid
 export class ButtonExpired extends PublicError {
-    public message = "This button has expired."
+    public message = "This button has expired"
 
     constructor() {
         super()
@@ -54,7 +54,7 @@ export abstract class InvalidCommandError extends PublicError {
 
 
 export class MemberNotConnected extends InvalidCommandError {
-    public message = "You must be connected to a vc."
+    public message = "You must be connected to a vc"
     constructor() {
         super([])
     }     
@@ -64,12 +64,12 @@ export class MemberNotInSameChannel extends InvalidCommandError {
     public message: string
     constructor() {
         super([])
-        this.message = `You must be connected to the same channel as the bot.`
+        this.message = `You must be connected to the same channel as the bot`
     }     
 }
 
 export class CLientNotConnected extends InvalidCommandError {
-    public message = "Bot must be connected to a vc."
+    public message = "Bot must be connected to a vc"
     constructor() {
         super([])
     }     
@@ -79,47 +79,47 @@ export class AlreadyConnected extends InvalidCommandError {
     public message
     constructor(args: {channelName: string | undefined}) {
         super([])
-        this.message = `Bot is already connected to channel: ${args.channelName ?? "UNKNOWN"}.`
+        this.message = `Bot is already connected to channel: ${args.channelName ?? "UNKNOWN"}`
     }     
 }
 
 export class VcJoinTimeOut extends InvalidCommandError {
-    public message = "Bot timed out trying to connect to your vc."
+    public message = "Bot timed out trying to connect to your vc"
     constructor() {
         super([])
     }     
 }
 
 export class AlreadyPaused extends InvalidCommandError {
-    public message = "Bot is already paused."
+    public message = "Bot is already paused"
     constructor() {
         super([])
     }     
 }
 
 export class AlreadyPlaying extends InvalidCommandError {
-    public message = "Bot is already playing."
+    public message = "Bot is already playing"
     constructor() {
         super([])
     }     
 }
 
 export class QueueEmpty extends InvalidCommandError {
-    public message = "The queue is empty."
+    public message = "The queue is empty"
     constructor() {
         super([])
     }     
 }
 
 export class NotPlaying extends InvalidCommandError {
-    public message = "Bot has no track."
+    public message = "Bot has no track"
     constructor() {
         super([])
     }     
 }
 
 export class OnlyInCachedGuild extends InvalidCommandError {
-    public message = "This can only be used in cached Guilds."
+    public message = "This can only be used in cached Guilds"
     constructor() {
         super([])
     }     

@@ -38,7 +38,7 @@ export class PlayerManager {
 
                 // update channelId when moved
                 if (oldState.channelId !== newState.channelId) {
-                    player.setNewChannelId(newState.channelId)
+                    player.channelId = newState.channelId
                 }
             }
 
@@ -62,7 +62,7 @@ export class PlayerManager {
         if (!player) throw new CLientNotConnected()
 
         await player.ready()
-        if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
+        if (player.channelId !== userVc.id) throw new MemberNotInSameChannel()
 
         return {player, guildId}
     }
@@ -73,7 +73,7 @@ export class PlayerManager {
         
         if (player) {
             await player.ready()
-            if (player.getChannelId() !== userVc.id) throw new MemberNotInSameChannel()
+            if (player.channelId !== userVc.id) throw new MemberNotInSameChannel()
         
             return {player, guildId}
         }
@@ -142,20 +142,17 @@ export class PlayerManager {
             this.logger.log(`Removed player for guild: [${guildId}]`)
         })
 
-        player.on("playingNewTrack", (cause) => {
+        player.on("playingNewTrackAuto", () => {
             const channelId = this.replyChannels.get(guildId)
 
             // remove buttons from component handling when player queue updates
             // todo invalidate components 
 
-            if (cause === "command") return
-
             // only handle noninteraction events
         })
 
-        player.on("queueEnd", (cause) => {
+        player.on("queueEndAuto", () => {
             const channelId = this.replyChannels.get(guildId)
-            if (cause === "command") return
 
             // only handle noninteraction events
         })

@@ -24,7 +24,7 @@ export class ComponentManager {
     }
 
     //todo use guild id for invalidate components stuff
-    public register<T>(component: MessageComponent<any, T>, context: T, guildId: string) {
+    public register<T>(component: MessageComponent<any, T>, context: T) {
         //prevent memory leak
         const timeout = setTimeout(() => {
             this.components.delete(component.customId)

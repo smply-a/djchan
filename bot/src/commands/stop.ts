@@ -16,6 +16,7 @@ export class Stop extends Command<ApplicationCommandType.ChatInput> {
         const {player} = await interaction.client.players.getPlayerGuarded(interaction)
         
         player.stop()
+        player.tryDisconnect()
         await interaction.editReply(MusicReplies.stopped)
     }
 }

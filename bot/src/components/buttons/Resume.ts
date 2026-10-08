@@ -5,15 +5,14 @@ import { Emoji } from "../../constants.js";
 import { MusicReplies } from "../replies/music.js";
 
 export class Resume extends Button<null> {
-    constructor(handling: {manager: ComponentManager, guildId: string}) {
+    constructor(context: {manager: ComponentManager}) {
         super({
             data: {
                 style: ButtonStyle.Secondary,
                 label: "resume",
                 emoji: Emoji.play
             },
-            invalidateOn: "none"
-    }, {...handling, context: null})
+    }, {...context, data: null})
     }
 
     protected async execute(interaction: ButtonInteraction): Promise<void> {
@@ -23,7 +22,7 @@ export class Resume extends Button<null> {
 
         player.resume()
         
-        this.delete()
+        this.invalidate()
         await interaction.editReply(MusicReplies.resume)
     }
 }

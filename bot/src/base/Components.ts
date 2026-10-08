@@ -6,25 +6,29 @@ import { Logger } from "./Logger.js";
 // ? buttons that are independant from the message they belong to
 // only for logic buttons (with callback), link buttons directly over builder
 
-export type ComponentInvalidationType = "changeQueue" | "changePlayback" | "none"
+// export type ComponentInvalidationType = "changeQueue" | "changePlayback" | "none"
 
-export abstract class MessageComponent<T extends keyof ComponentMap, Context> {
+interface Context<Data> { 
+    manager: ComponentManager; 
+    data: Data; 
+}
+
+export abstract class MessageComponent<T extends keyof ComponentMap, Data> {
     #logger?: Logger;
     public abstract get logger(): Logger
 
-    public readonly invalidateOn: ComponentInvalidationType;
+
     public readonly customId: string;
     protected manager: ComponentManager;
     protected readonly data: ComponentMap[T]["data"] & { customId: string, type: T };
 
     constructor(
         type: T,
-        componentData: {data: ComponentMap[T]["data"], invalidateOn: ComponentInvalidationType},
-        handling: { manager: ComponentManager; context: Context; guildId: string; },
+        componentData: {data: ComponentMap[T]["data"]},
+        context: Context<Data>,
     ) {
         this.customId = randomUUID();
-        this.manager = handling.manager;
-        this.invalidateOn = componentData.invalidateOn
+        this.manager = context.manager;
 
         this.data = {
             ...componentData.data,
@@ -32,29 +36,29 @@ export abstract class MessageComponent<T extends keyof ComponentMap, Context> {
             type: type
         }
 
-        handling.manager.register(this, handling.context, handling.guildId);
+        this.manager.register(this, context.data);
     }
 
     public abstract get component(): ComponentMap[T]["builder"];
 
     protected abstract execute(
         interaction: ComponentMap[T]["interaction"], 
-        context: Context
+        data: Data
     ): Promise<void>;
 
     public async run(
         interaction: ComponentMap[T]["interaction"], 
-        context: Context
+        data: Data
     ) {
-        await this.execute(interaction, context);
+        await this.execute(interaction, data);
     }
 
-    public delete() {
+    public invalidate() {
         this.manager.delete(this);
     }
 }
 
-export abstract class Button<Context> extends MessageComponent<ComponentType.Button, Context> {
+export abstract class Button<Data> extends MessageComponent<ComponentType.Button, Data> {
     #logger?: Logger
     public get logger(): Logger {
         return this.#logger ??= new Logger({
@@ -63,22 +67,18 @@ export abstract class Button<Context> extends MessageComponent<ComponentType.But
         })
     }
 
-    constructor(button: {
-        data: Omit<InteractionButtonComponentData, "customId" | "type">,
-        invalidateOn: ComponentInvalidationType
-    }, handling: {
-        manager: ComponentManager,
-        context: Context,
-        guildId: string
-    }) {
-        super(ComponentType.Button, button, handling)
+    constructor(
+        button: {data: Omit<InteractionButtonComponentData, "customId" | "type">,}, 
+        context: Context<Data>
+    ) {
+        super(ComponentType.Button, button, context)
     }
 
     public get component() {
         return new ButtonBuilder(this.data)
     }
 
-    protected abstract execute(interaction: ButtonInteraction, context: Context): Promise<void>;
+    protected abstract execute(interaction: ButtonInteraction, data: Data): Promise<void>;
 }
 
 

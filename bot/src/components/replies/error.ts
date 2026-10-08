@@ -1,5 +1,5 @@
 import { ContainerBuilder, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder } from "discord.js";
-import type { InternalError, InvalidCommandError } from "../../base/PublicErrors.js";
+import type { ButtonExpired, InternalError, InvalidCommandError } from "../../base/PublicErrors.js";
 import { Color, Emoji, ephemeralReplyFlags } from "../../constants.js";
 import type { ReplyPayload } from "../../types/index.js";
 
@@ -33,7 +33,7 @@ function internalErrorReply(error: InternalError): ReplyPayload {
     }
 }
 
-function expiredComponentReply(error: InternalError): ReplyPayload {
+function expiredComponentReply(error: ButtonExpired): ReplyPayload {
     const container = baseContainer(error.message)
 
     return {

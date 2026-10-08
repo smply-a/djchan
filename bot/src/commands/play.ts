@@ -1,6 +1,7 @@
 import { ytdlp } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
+import { TrackError } from "../base/GuildPlayerInstance.js";
 import { MusicReplies } from "../components/replies/music.js";
 
 export class Play extends Command<ApplicationCommandType.ChatInput> {
@@ -42,16 +43,27 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
             interaction.client.players.getOrCreateGuarded(interaction)
         ])
         
-        // await interaction.editReply(SongSearch({type: "found", track}))
+        // result
+        await interaction.editReply(MusicReplies.request({state: "result", track}))
 
-        const result = player.addTrack(track)
+        try {
+            const result = await player.addTrack(track)
 
-        if (result.inQueue) {
+            console.log(result.inQueue)
+            if (result.inQueue) {
+                await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager))
+            } else {
+                await interaction.editReply(MusicReplies.start(track))
+            }
+        
+        } catch (error) {
+            if (error instanceof TrackError) {
+                await interaction.editReply(MusicReplies.trackError(error.track, error.nextTrack, interaction.client.componentManager))
+                return
+            }
 
-            await interaction.editReply(MusicReplies.queue(track, result.index, interaction.client.componentManager, guildId))
-            return
+            // re throw unkown error
+            throw error
         }
-
-        await interaction.editReply(MusicReplies.start(track))
     }
 }

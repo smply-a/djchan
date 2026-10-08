@@ -64,9 +64,9 @@ export const ytdlp = {
                 url,
             ]);
 
-        } else {
-            throw new Error(`Invalid YouTube URL: ${url}`);
         }
+            
+        throw new Error(`Invalid YouTube URL: ${url}`)
     },
 
     getTrack: (urlOrName: string): Promise<Track> => {

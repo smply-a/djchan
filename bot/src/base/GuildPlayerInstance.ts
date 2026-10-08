@@ -12,21 +12,18 @@ interface PlayerState {
     status: AudioPlayerStatus
 }
 
-export type PlayerEventCause = "command" | "auto"
-
 interface GuildPlayerEvents {
-    queueEnd: [cause: PlayerEventCause]
-    playingNewTrack: [cause: PlayerEventCause, track: Track]
+    queueEndAuto: []
+    playingNewTrackAuto: [track: Track]
     disconnected: []
 
-    error: [error: Error]
+    error: [error: unknown]
 }
 
 export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     private song: {
         track: Track,
-        stream: ChildProcess,
-        cause: PlayerEventCause
+        stream: ChildProcess
     } | null = null
     private queue: Track[] = []
 
@@ -40,6 +37,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
     // mutex on join
     #ready: Promise<void | PublicError>
+
+    #changingTrack: Promise<void> | null = null
 
     #logger?: Logger
     private get logger(): Logger {
@@ -94,40 +93,38 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         })
 
         // Idle
-        this.audioPlayer.on(AudioPlayerStatus.Idle, (oldState) => {
+        this.audioPlayer.on(AudioPlayerStatus.Idle, async (oldState) => {
             this.tryKillStream()
 
             if (this.queue.length > 0) {
+                if (this.#changingTrack) {
+                    return
+                }
+
                 // auto playlist
-                this.playNextTrack("auto")
-            }
-        })
+                try {
+                    await this.playNextTrack()
+                    if(!this.song) {
+                        this.emit("error", new Error("playing but no track is set in player"))
+                        return
+                    }
+                    this.emit("playingNewTrackAuto", this.song.track)
 
-        // Playing
-        this.audioPlayer.on(AudioPlayerStatus.Playing, (oldState) => {
-            if (oldState.status === AudioPlayerStatus.Paused) {
+                } catch(error) {
+                    this.emit("error", error)
+                }
                 return
             }
 
-            if(!this.song) {
-                this.emit("error", new Error("playing but no track is set in player"))
-                return
-            }
-
-            this.emit("playingNewTrack", this.song.cause, this.song.track)
+            this.emit("queueEndAuto")
         })
     }
 
-    public get track() {
-        if (!this.song) return null
-        return this.song.track
-    }
-
-    public getChannelId() {
+    public get channelId() {
         return this.voice.channelId
     }
 
-    public setNewChannelId(newChannelId: string) {
+    public set channelId(newChannelId: string) {
         this.voice.channelId = newChannelId
         this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
     }
@@ -135,7 +132,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     public get state(): PlayerState {
         return {
             track: this.song?.track ?? null,
-            queue: [...this.queue],
+            queue: [...this.queue], // return copy not reference
             status: this.status,
         }
     }
@@ -150,36 +147,44 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
     // TODO maybe error handling with index out of range stuff
     // index 0 mean playing now, 1 first in queue
-    public addTrack(track: Track): {inQueue: false} | {inQueue: true, index: number} {
-        const index = this.queue.push(track)
+    public async addTrack(track: Track): Promise<
+        | {inQueue: false }
+        | {inQueue: true; index: number }
+    > {
 
-        if (this.status === AudioPlayerStatus.Idle && !this.song) {
-            // ! cause is "command"
-            this.playNextTrack("command")
-            return {inQueue: false}
-        } else {
-            return {inQueue: true, index}
+        const index = this.queue.push(track);
+
+        // mutex so that not multiple commands enter the play now state
+        // play immideately if idle and empty
+        if (this.status === AudioPlayerStatus.Idle && !this.song && !this.#changingTrack) {
+            await this.playNextTrack();
+            return {inQueue: false};
         }
+
+        return {inQueue: true, index };
     }
 
     // index 0 mean playing now, 1 first in queue
-    public insertTrack(track: Track, index: number | "now") {
+    public async insertTrack(track: Track, index: number | "now") {
         if (index === "now" || index === 0) {
             this.queue.splice(0, 0, track)
-            this.playNextTrack("command")
+
+            await this.playNextTrack()
             return
         }
 
         this.queue.splice(index - 1, 0, track)
     } 
 
+    // index 0 mean playing now, 1 first in queue
+    public deleteTrack(index: number) {
+        this.queue.splice(index - 1, 1)
+    }
+
     // -1 means not found
     public getTrackIndex(targetTrack: Track) {
-
-
         for (const [index, track] of [this.song?.track, ...this.queue].entries()) {
             if (track && targetTrack.uuid === track.uuid) {
-
                 return index
             }
         }
@@ -187,16 +192,9 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         return -1
     }
 
-    // index 0 mean playing now, 1 first in queue
-    public deleteTrack(index: number) {
-        this.queue.splice(index - 1, 1)
-    }
-
-    public skip() {
-        // ! cause is "command"
-        this.playNextTrack("command")
-        if (!this.song) return null
-        return this.song.track
+    public async skip(): Promise<Track | null> {
+        await this.playNextTrack()
+        return this.song?.track ?? null
     }
 
     public pause() {
@@ -208,7 +206,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
             case AudioPlayerStatus.Playing: {
                 this.audioPlayer.pause()
-                if (!this.song) throw new Error("Playing without song")
+                if (!this.song) throw new Error("playing but no track is set in player")
                 return this.song.track
             }
 
@@ -227,7 +225,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
             case AudioPlayerStatus.Paused: {
                 this.audioPlayer.unpause()
-                if (!this.song) throw new Error("Playing without song")
+                if (!this.song) throw new Error("playing but no track is set in player")
                 return this.song.track
             }
 
@@ -240,7 +238,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
     public stop() {
         this.queue = [];
         this.audioPlayer.stop(true);
-        this.tryKillStream()
+        this.tryKillStream(this.song?.stream)
     }
 
 
@@ -249,64 +247,108 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         return this.audioPlayer.state.status
     } 
 
-    private playNextTrack(cause: PlayerEventCause) {
-        this.tryKillStream()
-        const next = this.queue.shift()
+    private async playNextTrack() {
+        await this.awaitChangeTrack()
 
-        if (!next) {
-            this.song = null
-            // stop playing remaining buffer
-            this.audioPlayer.stop(true) 
-            this.emit("queueEnd", cause)
-            return
+        // mutex lock
+        let releaseLock!: () => void
+        this.#changingTrack = new Promise((resolve) => releaseLock = () => {
+            this.#changingTrack = null
+            resolve()
+        })
+
+        this.tryKillStream(this.song?.stream)
+
+        // on fail the track stays in queue for the user to decide weather to retry or skip
+        const track = this.queue.shift()
+
+        // if no song, do nothing
+        if (!track) {
+            releaseLock()
+            return 
         }
 
+        let stream: ChildProcess | undefined = undefined
+
         try {
-            const stream = ytdlp.getWebmOpusStream(next.url)
+            stream = ytdlp.getWebmOpusStream(track.url)
 
             stream.stderr?.on("data", (data) => this.logger.log("yt-dlp:", data.toString()));
-            
-            stream.on("error", (err) => {
-                this.emit("error", err)
-            });
 
             stream.on("close", () => {
                 this.logger.log("closed yt-dlp stream process")
             })
 
-            // prevent Stream from leaking
-            try {
-                if (!stream.stdout) throw new Error("No ytdlp.stdout, unkown cause")
+            // wait for data to arrive
+            await new Promise<void>((resolve, reject) => {
 
-                const resource = createAudioResource(stream.stdout, {
-                    inputType: StreamType.WebmOpus,
-                });
-                
-                // success
-                this.song = {
-                    track: next,
-                    stream,
-                    cause
-                }
-                this.audioPlayer.play(resource)
+                const timeout = setTimeout(() => reject(new Error("yt-dlp stream timeout")), 15_000);
+                // succes
+                stream?.stdout?.once("readable", () => {
+                    clearTimeout(timeout)
+                    resolve()
+                })
 
-            } catch (error) {
-                stream.kill("SIGKILL")
-                throw error
+                // fail
+                stream?.once("exit", (error) => {
+                    clearTimeout(timeout);
+                    reject(error)
+                })
+                stream?.once("error", (error) => {
+                    clearTimeout(timeout);
+                    reject(error)
+                })
+            })
+
+
+            if (!stream.stdout) throw new Error("No ytdlp.stdout, unkown cause")
+
+            const resource = createAudioResource(stream.stdout, {
+                inputType: StreamType.WebmOpus,
+            });
+            
+            // success
+            this.song = {
+                track,
+                stream
             }
+            this.audioPlayer.play(resource)
 
         // error
         } catch (error) {
-            this.emit("error", error as Error)
-        }
+            this.tryKillStream(stream)
+            this.logger.error(error)
+            throw new TrackError(track, this.queue[0])
+        
+        } finally {
+            releaseLock()
+        } 
     }
 
-    private tryKillStream() {
-        const stream = this.song?.stream
+    private tryKillStream(stream?: ChildProcess) {
+        stream?.kill("SIGKILL")
         this.song = null
+        // stop remaining buffer
+        this.audioPlayer.stop(true)
+    }
 
-        if (stream) {
-            stream.kill("SIGKILL")
+    private async awaitChangeTrack() {
+        while (this.#changingTrack) {
+            await this.#changingTrack
         }
+    }
+}
+
+export class TrackError extends Error {
+    public track: Track
+    public nextTrack: Track | null
+    public error: unknown
+    constructor(
+        track: Track,
+        nextTrack: Track | null | undefined,
+    ) {
+        super(`Failed to play track: ${track.title}`)
+        this.track = track
+        this.nextTrack = nextTrack ? nextTrack : null
     }
 }

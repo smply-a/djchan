@@ -92,10 +92,10 @@ export class InteractionCreate extends Event<"interactionCreate"> {
             else {
                 await interaction.reply(payload)
             }
+
+            // delete message after 5 minutes
+            this.deleteReply(5*60, interaction)
         }
-        
-        // delete message after 5 minutes
-        this.deleteReply(5*60, interaction)
     }
 
     // TODO

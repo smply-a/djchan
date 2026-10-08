@@ -17,7 +17,7 @@ export class Pause extends Command<ApplicationCommandType.ChatInput> {
         const {player, guildId} = await interaction.client.players.getPlayerGuarded(interaction)
 
         const track = player.pause()
-        await interaction.editReply(MusicReplies.pause(interaction.client.componentManager, guildId))
+        await interaction.editReply(MusicReplies.pause(interaction.client.componentManager))
 
         this.deleteReply(5*60, interaction)
     }
