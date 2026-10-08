@@ -1,4 +1,4 @@
-import { ytdlp } from "@app/player";
+import { ytApi } from "@app/player";
 import { ApplicationCommandOptionType, ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../base/Command.js";
 import { TrackError } from "../base/GuildPlayerInstance.js";
@@ -39,7 +39,7 @@ export class Play extends Command<ApplicationCommandType.ChatInput> {
         await interaction.reply(MusicReplies.request({state: "searching", query}))
 
         const [track, {player, guildId}] = await Promise.all([
-            ytdlp.getTrack(query),
+            ytApi.getTrack(query),
             interaction.client.players.getOrCreateGuarded(interaction)
         ])
         

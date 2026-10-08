@@ -49,7 +49,7 @@ function spawnYtdlp(args: string[]) {
 
 // YTDLP API
 // TODO DONT GET PLAYLIST WHEN LINK IS PLAYLIST
-export const ytdlp = {
+export const ytApi = {
     getWebmOpusStream: (url: string): ChildProcess => {
         if (isUrl(url) && validUrl(url)) {
             console.log(`starting stream... ${url}`)

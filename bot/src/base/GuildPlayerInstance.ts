@@ -1,4 +1,4 @@
-import { ytdlp, type Track } from "@app/player";
+import { ytApi, type Track } from "@app/player";
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, joinVoiceChannel, StreamType, VoiceConnection, VoiceConnectionStatus, type AudioPlayer } from "@discordjs/voice";
 import { type ChildProcess } from "child_process";
 import type { VoiceBasedChannel } from "discord.js";
@@ -271,7 +271,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         let stream: ChildProcess | undefined = undefined
 
         try {
-            stream = ytdlp.getWebmOpusStream(track.url)
+            stream = ytApi.getWebmOpusStream(track.url)
 
             stream.stderr?.on("data", (data) => this.logger.log("yt-dlp:", data.toString()));
 
