@@ -1,14 +1,13 @@
 import type { Track } from "@app/player";
 import type { AudioPlayerStatus } from "@discordjs/voice";
 import type { InteractionEditReplyOptions, InteractionReplyOptions } from "discord.js";
+import { ButtonInteraction } from "discord.js";
 import { MusicReplies } from "../components/replies/music.js";
 import type { ComponentManager } from "./Components.js";
 import type { PlayerState } from "./GuildPlayerInstance.js";
 
 export type ReplyPayload = InteractionReplyOptions & InteractionEditReplyOptions
 export type Paginators = QueuePaginator
-
-import { ButtonInteraction } from "discord.js";
 
 export abstract class Paginator<Data> {
     public index = 0;
@@ -24,7 +23,6 @@ export abstract class Paginator<Data> {
     }
 
     public getReply(index = 0): ReplyPayload {
-        // Safe clamping in one minimalist line
         this.index = Math.max(0, Math.min(index, this.maxIndex));
         return this.render();
     }
@@ -57,7 +55,7 @@ export class QueuePaginator extends Paginator<QueuePaginatorData> {
     public readonly songsPerPage: number
 
     constructor(playerState: PlayerState, componentManager: ComponentManager) {
-        const songsPerPage = 5
+        const songsPerPage = 10
 
         super(QueuePaginator.getQueueData(playerState, songsPerPage), componentManager);
         this.songsPerPage = songsPerPage
