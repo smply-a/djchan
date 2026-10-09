@@ -1,11 +1,13 @@
 import type { Track } from "@app/player";
 import { ButtonInteraction, ButtonStyle } from "discord.js";
-import type { ComponentManager } from "../../base/ComponentManager.js";
+import type { ComponentManager } from "../../base/Components.js";
 import { Button } from "../../base/Components.js";
 import { TrackError } from "../../base/GuildPlayerInstance.js";
 import { ButtonExpired } from "../../base/PublicErrors.js";
 import { Emoji } from "../../constants.js";
 import { MusicReplies } from "../replies/music.js";
+
+// todo mabe make queue have a pointer that floats around so you can skip back etc
 
 interface Data {
     track: Track,
@@ -13,7 +15,7 @@ interface Data {
 }
 
 export class Skip extends Button<Data> {
-    constructor(private mode: "bindToThisTrack" | "normal", context: {manager: ComponentManager, data: Data}) {
+    constructor(private mode: "bindTrack" | "normal", context: {manager: ComponentManager, data: Data}) {
         super({
             data: {
                 style: ButtonStyle.Secondary,
@@ -28,7 +30,7 @@ export class Skip extends Button<Data> {
 
         const {player, guildId} = await interaction.client.players.getPlayerGuarded(interaction)
 
-        if (this.mode == "bindToThisTrack") {
+        if (this.mode == "bindTrack") {
             this.invalidate()
             if (player.state.queue[0] && player.state.queue[0].uuid !== nextTrack.uuid) {
                 throw new ButtonExpired()
@@ -38,12 +40,8 @@ export class Skip extends Button<Data> {
         try {
             const newTrack = await player.skip()
 
-            if (newTrack) {
-                await interaction.editReply(MusicReplies.skipped(newTrack))
-                return 
-            }
+            const reply = await interaction.editReply(MusicReplies.skipped(newTrack))
             
-            const reply = await interaction.editReply(MusicReplies.empty)
             this.deleteReply(5*60, reply)
         
         } catch (error) {

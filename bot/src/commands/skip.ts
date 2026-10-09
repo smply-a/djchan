@@ -21,12 +21,7 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
         try {
             const newTrack = await player.skip()
 
-            if (newTrack) {
-                await interaction.editReply(MusicReplies.skipped(newTrack))
-                return
-            }
-
-            await interaction.editReply(MusicReplies.empty)
+            await interaction.editReply(MusicReplies.skipped(newTrack))
         
         } catch (err) {
             if (err instanceof TrackError) {

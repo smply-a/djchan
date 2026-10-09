@@ -1,5 +1,5 @@
 import { ErrorReply } from "../components/replies/error.js";
-import type { ReplyPayload } from "../types/index.js";
+import type { ReplyPayload } from "./Paginators.js";
 
 export abstract class PublicError {
     public abstract message: string

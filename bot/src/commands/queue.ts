@@ -2,7 +2,7 @@
 
 import { ApplicationCommandType, type CacheType, ChatInputCommandInteraction } from "discord.js"
 import { Command } from "../base/Command.js"
-import { MusicReplies } from "../components/replies/music.js"
+import { QueuePaginator } from "../base/Paginators.js"
 
 export class Queue extends Command<ApplicationCommandType.ChatInput> {
     constructor() {
@@ -17,8 +17,8 @@ export class Queue extends Command<ApplicationCommandType.ChatInput> {
         await interaction.deferReply()
         const {player, guildId} = await interaction.client.players.getPlayerGuarded(interaction)
 
-        const {queue, track, status} = player.state
+        const pagination = new QueuePaginator(player.state, interaction.client.componentManager)
         
-        interaction.editReply(MusicReplies.queue(player.state))
+        interaction.editReply(pagination.getReply())
     }
 }

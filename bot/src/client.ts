@@ -1,6 +1,6 @@
 import { Client, Collection, type ClientOptions } from "discord.js";
 import type { Command } from "./base/Command.js";
-import { ComponentManager } from "./base/ComponentManager.js";
+import { ComponentManager } from "./base/Components.js";
 import type { Event } from "./base/Event.js";
 import { Logger } from "./base/Logger.js";
 import { PlayerManager } from "./base/PlayerManager.js";

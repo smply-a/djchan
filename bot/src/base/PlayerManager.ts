@@ -1,7 +1,7 @@
 import { ButtonInteraction, ChatInputCommandInteraction, MessageFlags, type Client, type MessageCreateOptions, type VoiceBasedChannel } from "discord.js";
-import type { ReplyPayload } from "../types/index.js";
 import { GuildPlayerInstance } from "./GuildPlayerInstance.js";
 import { Logger } from "./Logger.js";
+import type { ReplyPayload } from "./Paginators.js";
 import { CLientNotConnected, MemberNotConnected, MemberNotInSameChannel, OnlyInCachedGuild } from "./PublicErrors.js";
 
 type PlayerInteraction = ChatInputCommandInteraction | ButtonInteraction;

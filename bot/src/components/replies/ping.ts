@@ -1,6 +1,6 @@
 import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from "discord.js";
+import type { ReplyPayload } from "../../base/Paginators.js";
 import { Color, Emoji } from "../../constants.js";
-import type { ReplyPayload } from "../../types/index.js";
 
 export function pingReply(args: {state: "loading", try: number} | {state: "result", ping: number, dicordAPI: number, tries: number}): ReplyPayload {
     const message = args.state === "loading" 

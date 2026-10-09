@@ -1,7 +1,7 @@
 import { ContainerBuilder, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder } from "discord.js";
+import type { ReplyPayload } from "../../base/Paginators.js";
 import type { ButtonExpired, InternalError, InvalidCommandError } from "../../base/PublicErrors.js";
 import { Color, Emoji, ephemeralReplyFlags } from "../../constants.js";
-import type { ReplyPayload } from "../../types/index.js";
 
 
 

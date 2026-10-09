@@ -289,7 +289,7 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
                     clearTimeout(timeout);
                     reject(error)
                 })
-                stream?.stderr?.on("error", (error) => {
+                stream?.stderr?.on("data", (error) => {
                     clearTimeout(timeout);
                     reject(error)
                 })

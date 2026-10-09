@@ -9,7 +9,8 @@ export enum Emoji {
     error = "<:error:1555184333088891010>",
     loading = "<a:loading:1557030148472311901>",
     internet = "<:internet:1557725584526807080>",
-    arrow_right = "<:move:1556810450312630303>",
+    arrow_right = "<:arrow_right:1556810450312630303>",
+    arrow_left = "<:arrow_left:1557911451841339433>",
 
     pause = "<:pause:1555183306906009630>",
     play = "<:play:1555182791220666381>",
@@ -20,9 +21,6 @@ export enum Emoji {
 }
 
 export enum Image {
-    // error = "",
-    loading = "https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif?utm_source=de.wikipedia.org&utm_campaign=index&utm_content=original",
-
 }
 
 export const defaultReplyFlags = MessageFlags.IsComponentsV2

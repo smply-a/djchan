@@ -4,13 +4,13 @@ import type { Track } from "@app/player"
 import { getDurationString, viewString } from "@app/shared"
 import { AudioPlayerStatus } from "@discordjs/voice"
 import { ActionRowBuilder, ComponentType, ContainerBuilder, SectionBuilder, SeparatorBuilder, SeparatorSpacingSize, TextDisplayBuilder, ThumbnailBuilder, type MessageActionRowComponentBuilder } from "discord.js"
-import type { ComponentManager } from "../../base/ComponentManager.js"
-import type { PlayerState, TrackError } from "../../base/GuildPlayerInstance.js"
+import type { ComponentManager } from "../../base/Components.js"
+import type { TrackError } from "../../base/GuildPlayerInstance.js"
+import { QueuePaginator, type ReplyPayload } from "../../base/Paginators.js"
 import { Color, defaultReplyFlags, Emoji } from "../../constants.js"
-import type { ReplyPayload } from "../../types/index.js"
-import { PlayNext } from "../buttons/PlayNext.js"
-import { PlayNow } from "../buttons/PlayNow.js"
-import { Resume } from "../buttons/Resume.js"
+import { PlayNext, PlayNow } from "../buttons/Move.js"
+import { NavigateLeft, NavigateRight } from "../buttons/Navigation.js"
+import { Resume } from "../buttons/Playback.js"
 import { Skip } from "../buttons/Skip.js"
 
 
@@ -22,12 +22,11 @@ export const MusicReplies = {
     move: (track: Track, oldIndex: number, newIndex: number) => playerTrackChangeReply({action: "move", track, oldIndex, newIndex}),
     pause: (componentManager: ComponentManager) => playerPlaybackReply({action: "pause", manager: componentManager}),
     resume: playerPlaybackReply({action: "resume"}),
-    queue: queueReply,
-    empty: queueEmpty(),
-    skipped: (track: Track) => playerTrackChangeReply({action: "skip", track}),
+    skipped: (track: Track | null) => playerTrackChangeReply({action: "skip", track}),
+    queue: renderQueuePaginator,
     stopped: playerPlaybackReply({action: "stop"}),
     request: songRequestReply,
-    trackError: (error: TrackError, componentManager: ComponentManager) => TrackErrorReply(error, componentManager)
+    trackError: TrackErrorReply
 }
 
 
@@ -49,6 +48,7 @@ function songInfo(track : Track) {
         ))
         .setThumbnailAccessory(new ThumbnailBuilder().setURL(track.thumbnail))
 }
+
 
 
 type RequestArgs = 
@@ -86,7 +86,7 @@ export function songRequestReply(args: RequestArgs): ReplyPayload {
 
 type TrackChangeArgs = 
     {action: "start", track: Track} | 
-    {action: "skip", track: Track} |
+    {action: "skip", track: Track | null} |
     {action: "queue", track: Track, index: number, manager: ComponentManager} |
     {action: "move", track: Track, oldIndex: number, newIndex: number}
 function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
@@ -103,9 +103,17 @@ function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
             break
         }
         case "skip": {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${Emoji.skipNext} skipped to ` + songInfoInline(track)
-            ))
+            if (track) {
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `### ${Emoji.skipNext} skipped to ` + songInfoInline(track)
+                ))
+
+            } else {
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    "### queue empty"
+                ))
+            }
+            
             break
         }
 
@@ -118,7 +126,7 @@ function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
             }
 
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${Emoji.queued} postion \`${index}\``
+                `### ${Emoji.queued} queued \`${index}\``
             ))
             .addSectionComponents(songInfo(track))
             .addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons))
@@ -128,11 +136,10 @@ function playerTrackChangeReply(args: TrackChangeArgs): ReplyPayload {
         case "move": {
             const {oldIndex, newIndex} = args
 
-            const isNext = newIndex === 1;
             const isPlaying = newIndex === 0;
 
-            const emoji = isPlaying ? Emoji.play : isNext ? Emoji.queued_next : Emoji.queued;
-            const newIndexString = isPlaying ? "now playing" : isNext ? "next" : newIndex;
+            const emoji = isPlaying ? Emoji.play : Emoji.queued;
+            const newIndexString = isPlaying ? "now playing" : newIndex;
 
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 `### ${emoji} position \`${oldIndex}\` ${Emoji.arrow_right} \`${newIndexString}\`\n` +
@@ -196,34 +203,57 @@ function playerPlaybackReply(args: PlaybackArgs): ReplyPayload {
     }
 }
 
-function queueReply({queue, track, status}: PlayerState): ReplyPayload {
-    const state = 
-        status === AudioPlayerStatus.Buffering ? "buffering" :
-        status === AudioPlayerStatus.Playing ? "playing" :
-        status === AudioPlayerStatus.Idle ? "idle" :
-        "paused"
-
-    
+function renderQueuePaginator(paginator: QueuePaginator, manager: ComponentManager): ReplyPayload {
     const container = getBaseContainer()
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `### ${Emoji.queued} queue\n` +
-            `currently: \`${state}\` ${track ? `[${track.title}](${track.url})`: ""}\n`
-        ))
-        .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(SeparatorSpacingSize.Small))
+    const {firstPage, list} = paginator.currentData
+
+    // title first page
+    if (firstPage) {
+        const {status, track} = firstPage
+        const state = 
+            status === AudioPlayerStatus.Buffering ? "buffering" :
+            status === AudioPlayerStatus.Playing ? "playing" :
+            status === AudioPlayerStatus.Idle ? "player is idle" :
+            "paused"
         
-    if (queue.length > 0) container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            queue.map((track, index) => `${index+1}. [${track.title}](${track.url})`).join("\n")
+        container
+            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `### ${Emoji.queued} queue\n` +
+                `\`${state}\` ${track ? `[${track.title}](${track.url})`: ""}\n`
+            ))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider().setSpacing(SeparatorSpacingSize.Small))
+    
+    // set title on later pages
+    } else {
+        container
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `### ${Emoji.queued} queue\n`
+        ))
+    }
+
+    // skip for loop if there is nothing in queue
+    if (list.length === 0) {
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            "queue empty"
         ))
 
-    return {
-        components: [container],
-        flags: defaultReplyFlags
-    }
-}
+    // list queue
+    } else {
+        const indexOffset = paginator.songsPerPage * paginator.index
 
-function queueEmpty(): ReplyPayload {
-    const container = getBaseContainer()
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent("### queue empty"))
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            list.map((track, index) => `${index+1 + indexOffset}. [${track.title}](${track.url})`).join("\n")
+        ))
+        
+        if (paginator.isMutlipage) {
+            container.addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>()
+                .addComponents(
+                    new NavigateLeft<typeof paginator>({paginator, manager}).component,
+                    new NavigateRight<typeof paginator>({paginator, manager}).component
+                )
+            )
+        }
+    }
 
     return {
         components: [container],
@@ -243,7 +273,7 @@ function TrackErrorReply(error: TrackError, componentManager: ComponentManager):
     
     if (nextTrack) {
         container.addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>()
-            .addComponents(new Skip("bindToThisTrack", {manager: componentManager, data: {track, nextTrack}}).component)
+            .addComponents(new Skip("bindTrack", {manager: componentManager, data: {track, nextTrack}}).component)
         )
     }
 
