@@ -61,6 +61,7 @@ export const ytApi = {
                 "-x",
                 "--audio-format", "opus",
                 "-o", "-",
+                "--buffer-size", "16k",
                 url,
             ]);
 

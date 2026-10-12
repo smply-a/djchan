@@ -10,3 +10,8 @@ services:
     environment:
       - MODE=prod
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2048M 
+          cpus: '3'

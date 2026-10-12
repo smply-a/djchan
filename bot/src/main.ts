@@ -36,8 +36,8 @@ async function main() {
         presence: {
             status: "online",
             activities: [{
-                name: "streaming yt music", 
-                type: ActivityType.Custom
+                name: "YT Music", 
+                type: ActivityType.Listening
             }]
         }
     })

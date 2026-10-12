@@ -12,11 +12,13 @@ RUN pnpm deploy --filter bot --prod --legacy /out
 
 
 FROM node:22-alpine AS runner
-RUN apk add --no-cache ffmpeg python3 curl py3-pip deno 
+RUN apk add --no-cache ffmpeg python3 curl py3-pip deno tini
 RUN pip install --no-cache-dir --upgrade yt-dlp --break-system-packages
 
 WORKDIR /app
 
 COPY --from=builder /out .
 USER node
+#tini soll zombies verhindern
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]

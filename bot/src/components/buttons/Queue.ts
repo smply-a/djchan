@@ -158,6 +158,7 @@ export class RemoveFromQueue extends Button<Track> {
     constructor(context: {manager: ComponentManager, data: Track}) {
         super({ 
             data: {
+                label: "delete",
                 emoji: Emoji.delete,
                 style: ButtonStyle.Danger
             }

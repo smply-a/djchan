@@ -286,38 +286,36 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
             // wait for data to arrive
             await new Promise<void>((resolve, reject) => {
                 const cleanup = () => {
-                    clearTimeout(timeout);
-                    stream?.stdout?.removeListener("readable", onReadable);
-                    stream?.removeListener("exit", onExit);
-                    stream?.removeListener("error", onError);
+                    clearTimeout(timeout)
+                    stream?.stdout?.removeListener("readable", onReadable)
+                    stream?.removeListener("exit", onExit)
+                    stream?.removeListener("error", onError)
                 };
 
                 const timeout = setTimeout(() => {
-                    cleanup();
-                    reject(new Error("yt-dlp stream timeout (15s)"));
-                }, 15_000);
+                    cleanup()
+                    reject(new Error("yt-dlp stream timeout (15s)"))
+                }, 15_000)
 
                 const onReadable = () => {
-                    cleanup();
-                    resolve();
+                    cleanup()
+                    resolve()
                 };
 
                 const onExit = (code: number | null) => {
-                    cleanup();
+                    cleanup()
                     reject(new Error(`yt-dlp process exited prematurely with code ${code}`));
                 };
 
                 const onError = (error: Error) => {
-                    cleanup();
-                    reject(error);
+                    cleanup()
+                    reject(error)
                 };
 
-                stream?.stdout?.once("readable", onReadable);
-                stream?.once("exit", onExit);
-                stream?.once("error", onError);
-
-                stream?.stderr?.on("data", (data) => {
-                })
+                stream?.stdout?.once("readable", onReadable)
+                stream?.once("exit", onExit)
+                stream?.once("error", onError)
+                //stream?.stderr?.on("error", onError)
             });
 
 
