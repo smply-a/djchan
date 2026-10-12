@@ -33,7 +33,7 @@ export abstract class Paginator<Data> {
         return data;
     }
 
-    public get isMutlipage() { return this.data.length > 0; }
+    public get isMutlipage() { return this.data.length > 1; }
     public get isMostLeft() { return this.index <= 0; }
     public get isMostRight() { return this.index >= this.maxIndex; }
 
@@ -63,7 +63,7 @@ export class QueuePaginator extends Paginator<QueuePaginatorData> {
 
     public async refresh(interaction: ButtonInteraction) {
         const {player} = await interaction.client.players.getPlayerGuarded(interaction);
-        this.data = QueuePaginator.getQueueData(player.state, this.songsPerPage);
+        this.data = QueuePaginator.getQueueData(await player.getState(), this.songsPerPage);
     }
 
     protected render(): ReplyPayload {

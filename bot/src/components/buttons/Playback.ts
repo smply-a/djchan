@@ -1,7 +1,8 @@
 import { ButtonInteraction, ButtonStyle } from "discord.js";
 import type { ComponentManager } from "../../base/Components.js";
 import { Button } from "../../base/Components.js";
-import { Emoji } from "../../constants.js";
+import { Duration, Emoji } from "../../constants.js";
+import { deleteReply } from "../../utils.js";
 import { MusicReplies } from "../replies/music.js";
 
 class Playback extends Button<null> {
@@ -22,18 +23,20 @@ class Playback extends Button<null> {
         await interaction.deferUpdate()
 
         const {player} = await interaction.client.players.getPlayerGuarded(interaction)
+        const manager = interaction.client.componentManager
 
-
+        let reply
         if (this.type === "resume") {
             player.resume()
+            reply = await interaction.editReply(MusicReplies.resume())
         } else {
             player.pause()
+            reply = await interaction.editReply(MusicReplies.pause(manager))
         }
         // todo make binding to song a buttons protected prob
         this.invalidate()
-        const reply = await interaction.editReply(MusicReplies.resume)
 
-        this.deleteReply(5*60, reply)
+        deleteReply(Duration.tempMessages, reply)
     }
 }
 

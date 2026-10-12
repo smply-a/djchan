@@ -1,6 +1,7 @@
 import { loadEnv } from '@app/shared'
 import { ActivityType, GatewayIntentBits } from "discord.js"
 import MyClient from "./client.js"
+import { Help } from './commands/help.js'
 import { Pause } from './commands/pause.js'
 import { Ping } from "./commands/ping.js"
 import { Play } from './commands/play.js'
@@ -44,12 +45,13 @@ async function main() {
     await client.start({
         token,
         commands: [
+            Help,
             Ping,
             Play,
             Pause,
             Skip,
             Stop, 
-            Queue
+            Queue,
         ],
         events: [
             Ready,

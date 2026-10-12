@@ -26,8 +26,8 @@ export class InternalError extends PublicError {
 
 
 // Button no longer valid
-export class ButtonExpired extends PublicError {
-    public message = "This button has expired"
+export class ComponentExpired extends PublicError {
+    public message = "This component has expired"
 
     constructor() {
         super()

@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
-import { ButtonBuilder, ButtonInteraction, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ComponentType, InteractionResponse, MentionableSelectMenuBuilder, MentionableSelectMenuInteraction, Message, MessageComponentInteraction, RoleSelectMenuBuilder, RoleSelectMenuInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, UserSelectMenuBuilder, UserSelectMenuInteraction, type ChannelSelectMenuComponentData, type InteractionButtonComponentData, type MentionableSelectMenuComponentData, type RepliableInteraction, type RoleSelectMenuComponentData, type StringSelectMenuComponentData, type UserSelectMenuComponentData } from "discord.js";
+import { ButtonBuilder, ButtonInteraction, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ComponentType, MentionableSelectMenuBuilder, MentionableSelectMenuInteraction, MessageComponentInteraction, RoleSelectMenuBuilder, RoleSelectMenuInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, UserSelectMenuBuilder, UserSelectMenuInteraction, type ChannelSelectMenuComponentData, type InteractionButtonComponentData, type MentionableSelectMenuComponentData, type RepliableInteraction, type RoleSelectMenuComponentData, type StringSelectMenuComponentData, type UserSelectMenuComponentData } from "discord.js";
 import { Logger } from "./Logger.js";
-import { ButtonExpired } from "./PublicErrors.js";
+import { ComponentExpired } from "./PublicErrors.js";
 
 
 
@@ -87,12 +87,6 @@ export abstract class MessageComponent<T extends keyof ComponentMap, Data> {
     public invalidate() {
         this.manager.delete(this);
     }
-
-    protected async deleteReply(seconds: number, message: Message | InteractionResponse) {
-        setTimeout(() => {
-            void message.delete().catch(()=>{})
-        }, seconds * 1000)
-    }
 }
 
 export abstract class Button<Data> extends MessageComponent<ComponentType.Button, Data> {
@@ -118,6 +112,28 @@ export abstract class Button<Data> extends MessageComponent<ComponentType.Button
     protected abstract execute(interaction: ButtonInteraction, data: Data): Promise<void>;
 }
 
+export abstract class StringSelect<Data> extends MessageComponent<ComponentType.StringSelect, Data> {
+    #logger?: Logger
+    public get logger(): Logger {
+        return this.#logger ??= new Logger({
+            type: "button",
+            origin: this.data.customId
+        })
+    }
+
+    constructor(
+        selectMenu: {data: Omit<StringSelectMenuComponentData, "customId" | "type">,}, 
+        context: Context<Data>
+    ) {
+        super(ComponentType.StringSelect, selectMenu, context)
+    }
+
+    public get component() {
+        return new StringSelectMenuBuilder(this.data)
+    }
+
+    protected abstract execute(interaction: StringSelectMenuInteraction, data: Data): Promise<void>;
+}
 
 
 // MANAGER
@@ -141,6 +157,8 @@ export class ComponentManager {
     }
 
     //todo use guild id for invalidate components stuff
+    // todo add message id, so on reload all the components are removed from the handler 
+    // todo (make it that this happens automatically)
     public register<T>(component: MessageComponent<any, T>, context: T) {
         //prevent memory leak
         const timeout = setTimeout(() => {
@@ -166,13 +184,9 @@ export class ComponentManager {
         const id = interaction.customId
 
         const entry = this.components.get(id)
-        if (!entry) throw new ButtonExpired()
+        if (!entry) throw new ComponentExpired()
 
-        if (entry.component instanceof Button && interaction.isButton()) {
-            await entry.component.run(interaction, entry.context)
-            return
-        }
 
-        throw new Error("Could not handle component interaction")
+        await entry.component.run(interaction, entry.context)
     }
 }

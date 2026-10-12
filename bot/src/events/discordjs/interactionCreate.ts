@@ -1,6 +1,8 @@
 import { ChatInputCommandInteraction, MessageComponentInteraction, MessageFlags, TextDisplayBuilder, type Interaction, type RepliableInteraction } from "discord.js";
 import { Event } from "../../base/Event.js";
 import { InternalError, PublicError } from "../../base/PublicErrors.js";
+import { Duration } from "../../constants.js";
+import { deleteReply } from "../../utils.js";
 
 // Handles all interactions
 export class InteractionCreate extends Event<"interactionCreate"> {
@@ -64,7 +66,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
                 await interaction.reply(payload)
 
             // delete message after 5 minutes
-            this.deleteReply(5*60, reply)
+            deleteReply(Duration.tempMessages, reply)
         }
     }
 
@@ -90,7 +92,7 @@ export class InteractionCreate extends Event<"interactionCreate"> {
 
 
             // delete message after 5 minutes
-            this.deleteReply(5*60, reply)
+            deleteReply(Duration.tempMessages, reply)
         }
     }
 

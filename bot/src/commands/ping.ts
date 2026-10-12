@@ -8,13 +8,16 @@ export class Ping extends Command<ApplicationCommandType.ChatInput> {
             name: "ping",
             type: ApplicationCommandType.ChatInput,
             description: "pings the server and returns latency"
+        }, {
+            group: "general",
+            description: "pings the server 5 times and calculates the average response time, aswell as the discord api reponse time",
+            syntax: "/pause"
         })
     }
 
-    // TODO make multiple pings to calc average
     protected async execute(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
         const gatewayPing = Math.max(0, interaction.client.ws.ping)
-        
+
         await interaction.reply(pingReply({state: "loading", try: 1}))
 
         const tries = 5

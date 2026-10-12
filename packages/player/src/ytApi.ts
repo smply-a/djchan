@@ -76,9 +76,11 @@ export const ytApi = {
             if(isurl && !validYtUrl(urlOrName)) {
                 throw new Error("link is not from youtube")
             }
+
             const query = isurl ? urlOrName : `ytsearch1:${urlOrName}`;
 
             console.log("searching...")
+
 
             const ytdlp = spawnYtdlp([
                 "--no-playlist",

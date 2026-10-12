@@ -8,6 +8,10 @@ export class Stop extends Command<ApplicationCommandType.ChatInput> {
             name: "stop",
             type: ApplicationCommandType.ChatInput,
             description: "stops stream and clears queue"
+        }, {
+            group: "music",
+            description: "stops the current song and empties the queue",
+            syntax: "/stop"
         })
     }
 
@@ -17,6 +21,6 @@ export class Stop extends Command<ApplicationCommandType.ChatInput> {
         
         player.stop()
         player.tryDisconnect()
-        await interaction.editReply(MusicReplies.stopped)
+        await interaction.editReply(MusicReplies.stopped())
     }
 }

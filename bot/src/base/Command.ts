@@ -1,4 +1,4 @@
-import { InteractionResponse, Message, type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
+import { type ApplicationCommandType, type ChatInputApplicationCommandData, type ChatInputCommandInteraction, type MessageApplicationCommandData, type MessageContextMenuCommandInteraction, type PrimaryEntryPointCommandData, type PrimaryEntryPointCommandInteraction, type UserApplicationCommandData, type UserContextMenuCommandInteraction } from "discord.js";
 import { Logger } from "./Logger.js";
 
 type CommandTypeMap = {
@@ -21,12 +21,23 @@ type CommandTypeMap = {
 
 }
 
+type CommandType = "music" | "general"
+interface CommandInfo {
+    description: string
+    syntax: string,
+    group: CommandType
+}
+
 export abstract class Command<T extends keyof CommandTypeMap = keyof CommandTypeMap> {
     constructor(
-        public readonly data: CommandTypeMap[T]["data"] & {type: T}
+        public readonly data: CommandTypeMap[T]["data"] & {type: T},
+        public readonly info: CommandInfo
     ) {}
     // to make command clickable in help
-    public id?: string
+    private id?: string
+    public setId(id:string) {
+        this.id = id
+    }
 
     // for visualisation and help
     //public icon:
@@ -50,9 +61,8 @@ export abstract class Command<T extends keyof CommandTypeMap = keyof CommandType
     }
 
     // utils
-    protected async deleteReply(seconds: number, message: Message | InteractionResponse) {
-        setTimeout(() => {
-            void message.delete().catch(()=>{})
-        }, seconds * 1000)
+    public getClickableString() {
+        if (!this.id) throw new Error("Clickable command not accessible since id was missing")
+        return `</${this.data.name}:${this.id}>`
     }
 }

@@ -26,7 +26,6 @@ export class PlayerManager {
             const guildId = oldState.guild.id
             const player = this.players.get(guildId)
             if(!player) return
-            
 
             // update bot on change
             if (oldState.member?.id === botId) {
@@ -57,7 +56,7 @@ export class PlayerManager {
 
     // makes sure that the user has the privileges to acces the player
     public async getPlayerGuarded(interaction: PlayerInteraction) {
-        const {player, userVc, guildId} = this.getGuardParams(interaction)
+        const {player, userVc, guildId} = this.allowAccess(interaction)
         
         if (!player) throw new CLientNotConnected()
 
@@ -69,7 +68,7 @@ export class PlayerManager {
 
     // makes sure that the user has the privileges to acces the player
     public async getOrCreateGuarded(interaction: PlayerInteraction) {
-        const {player, userVc, guildId} = this.getGuardParams(interaction)
+        const {player, userVc, guildId} = this.allowAccess(interaction)
         
         if (player) {
             await player.ready()
@@ -79,6 +78,7 @@ export class PlayerManager {
         }
 
         const newPlayer = await this.createPlayer(guildId, userVc, interaction.channelId);
+        this.setReplyChannel(guildId, interaction.channelId)
         
         return {player: newPlayer, guildId}
     }
@@ -86,13 +86,14 @@ export class PlayerManager {
 
 
     // get arguments for the public guarded functions
-    private getGuardParams(interaction: PlayerInteraction) {
+    private allowAccess(interaction: PlayerInteraction) {
         if (!interaction.inCachedGuild()) throw new OnlyInCachedGuild()
         
         const userVc = interaction.member.voice.channel;
         if (!userVc) throw new MemberNotConnected()
 
         const player = this.get(interaction.guild.id, interaction.channelId)
+        this.setReplyChannel(interaction.guild.id, interaction.channelId)
 
         return {
             player,
@@ -108,7 +109,6 @@ export class PlayerManager {
             return null
         }
 
-        this.setReplyChannel(guildId, textChannelId)
         return player
     }
 

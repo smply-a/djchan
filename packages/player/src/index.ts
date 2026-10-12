@@ -1,6 +1,4 @@
-import { ytApi } from "./ytApi.js"
-
-export { ytApi }
+export * from "./ytApi.js"
 
 export interface Track {
     uuid: string,

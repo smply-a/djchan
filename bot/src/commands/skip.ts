@@ -10,6 +10,10 @@ export class Skip extends Command<ApplicationCommandType.ChatInput> {
             name: "skip",
             type: ApplicationCommandType.ChatInput,
             description: "skips stream"
+        }, {
+            group: "music",
+            description: "skips to the next song in the queue",
+            syntax: "/skip"
         })
     }
 

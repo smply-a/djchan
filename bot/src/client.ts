@@ -73,7 +73,7 @@ export default class BotClient extends Client {
                 if (!cmd) {
                     return
                 }
-                cmd.id = command.id
+                cmd.setId(command.id)
             })
         })
     }

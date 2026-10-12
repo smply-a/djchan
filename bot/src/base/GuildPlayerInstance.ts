@@ -7,7 +7,7 @@ import { Logger } from "./Logger.js";
 import { AlreadyPaused, AlreadyPlaying, NotPlaying, PublicError, VcJoinTimeOut } from "./PublicErrors.js";
 
 export interface PlayerState {
-    queue: Track[]
+    queue: readonly Track[]
     track: Track | null,
     status: AudioPlayerStatus
 }
@@ -93,12 +93,12 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
         // Idle
         this.audioPlayer.on(AudioPlayerStatus.Idle, async (oldState) => {
-            this.tryKillStream()
+            this.tryKillStream(this.song?.stream)
 
             if (this.queue.length > 0) {
                 if (this.#mutex) {
                     return
-                }
+                }   
 
                 // auto playlist
                 try {
@@ -128,8 +128,8 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         this.logger.log(`Bot was moved to new channel: [${newChannelId}]`)
     }
 
-    public get state(): PlayerState {
-        this.awaitMutex()
+    public async getState(): Promise<PlayerState> {
+        await this.awaitMutex()
         return {
             track: this.song?.track ?? null,
             queue: [...this.queue], // return copy not reference
@@ -141,8 +141,18 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         if (this.voice.connection.state.status !== VoiceConnectionStatus.Destroyed) {
             this.stop()
             this.voice.connection.destroy()
+            this.emit("disconnected")
         }
-        this.emit("disconnected")
+    }
+
+    public async search(query: string) {
+        try {
+            const result = await ytApi.getTrack(query)
+            return result
+
+        } catch (error) {
+            throw new SearchError(query, this.queue[0])
+        }
     }
 
     // TODO maybe error handling with index out of range stuff
@@ -178,7 +188,11 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
     // index 0 mean playing now, 1 first in queue
     public deleteTrack(index: number) {
-        this.queue.splice(index - 1, 1)
+        if (index > 0) {
+            this.queue.splice(index - 1, 1)
+            return 
+        }
+        this.tryKillStream(this.song?.stream)
     }
 
     // -1 means not found
@@ -237,7 +251,6 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
     public stop() {
         this.queue = [];
-        this.audioPlayer.stop(true);
         this.tryKillStream(this.song?.stream)
     }
 
@@ -272,28 +285,40 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
 
             // wait for data to arrive
             await new Promise<void>((resolve, reject) => {
+                const cleanup = () => {
+                    clearTimeout(timeout);
+                    stream?.stdout?.removeListener("readable", onReadable);
+                    stream?.removeListener("exit", onExit);
+                    stream?.removeListener("error", onError);
+                };
 
-                const timeout = setTimeout(() => reject(new Error("yt-dlp stream timeout")), 15_000);
-                // succes
-                stream?.stdout?.once("readable", () => {
-                    clearTimeout(timeout)
-                    resolve()
-                })
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error("yt-dlp stream timeout (15s)"));
+                }, 15_000);
 
-                // fail
-                stream?.once("exit", (error) => {
-                    clearTimeout(timeout);
-                    reject(error)
+                const onReadable = () => {
+                    cleanup();
+                    resolve();
+                };
+
+                const onExit = (code: number | null) => {
+                    cleanup();
+                    reject(new Error(`yt-dlp process exited prematurely with code ${code}`));
+                };
+
+                const onError = (error: Error) => {
+                    cleanup();
+                    reject(error);
+                };
+
+                stream?.stdout?.once("readable", onReadable);
+                stream?.once("exit", onExit);
+                stream?.once("error", onError);
+
+                stream?.stderr?.on("data", (data) => {
                 })
-                stream?.once("error", (error) => {
-                    clearTimeout(timeout);
-                    reject(error)
-                })
-                stream?.stderr?.on("data", (error) => {
-                    clearTimeout(timeout);
-                    reject(error)
-                })
-            })
+            });
 
 
             if (!stream.stdout) throw new Error("No ytdlp.stdout, unkown cause")
@@ -320,11 +345,11 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         } 
     }
 
-    private tryKillStream(stream?: ChildProcess) {
-        stream?.kill("SIGKILL")
-        this.song = null
-        // stop remaining buffer
-        this.audioPlayer.stop(true)
+    private tryKillStream(stream?: ChildProcess): void {
+        stream?.kill("SIGKILL");
+        this.song = null;
+
+        this.audioPlayer.stop(true);
     }
 
     private async awaitMutex() {
@@ -333,29 +358,52 @@ export class GuildPlayerInstance extends EventEmitter<GuildPlayerEvents> {
         }
     }
 
-    private async getMutexLock() {
-        await this.awaitMutex()
+    private async getMutexLock(): Promise<() => void> {
+        const previous = this.#mutex;
 
-        let releaseLock!: () => void
-        this.#mutex = new Promise((resolve) => releaseLock = () => {
-            this.#mutex = null
-            resolve()
-        })
+        let releaseLock!: () => void;
 
-        return releaseLock
+        const current = new Promise<void>((resolve) => {
+            releaseLock = resolve;
+        });
+
+        // lock before awaiting the previous operation.
+        this.#mutex = current;
+
+        if (previous) {
+            await previous;
+        }
+
+        return () => {
+            releaseLock();
+
+            // dont clear lock that belongs to a newer operation
+            if (this.#mutex === current) {
+                this.#mutex = null;
+            }
+        };
     }
 }
 
-export class TrackError extends Error {
-    public track: Track
-    public nextTrack: Track | null
-    public error: unknown
-    constructor(
-        track: Track,
-        nextTrack: Track | null | undefined,
-    ) {
-        super(`Failed to play track: ${track.title}`)
-        this.track = track
-        this.nextTrack = nextTrack ? nextTrack : null
+
+
+abstract class PlayerError extends Error {
+    public nextTrack: Track | null;
+    
+    constructor(message: string, nextTrack?: Track | null) {
+        super(message);
+        this.nextTrack = nextTrack ?? null;
+    }
+}
+
+export class TrackError extends PlayerError {
+    constructor(public track: Track, nextTrack?: Track | null) {
+        super(`Failed to play track: ${track.title}`, nextTrack);
+    }
+}
+
+export class SearchError extends PlayerError {
+    constructor(public query: string, nextTrack?: Track | null) {
+        super(`Failed to find a track for query: ${query}`, nextTrack);
     }
 }
